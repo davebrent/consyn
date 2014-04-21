@@ -57,13 +57,15 @@ class Features(Base):
               for feature in range(FEATURE_SLOTS))))
 
     def __init__(self, unit, features):
-        assert len(features) <= FEATURE_SLOTS
-        self.unit = unit
-        self.corpus = unit.corpus
+        if unit:
+            self.unit = unit
+            self.corpus = unit.corpus
 
-        for index, (label, feature) in enumerate(features.items()):
-            setattr(self, "label_{}".format(index), label)
-            setattr(self, "feat_{}".format(index), feature)
+        if features:
+            assert len(features) <= FEATURE_SLOTS
+            for index, (label, feature) in enumerate(features.items()):
+                setattr(self, "label_{}".format(index), label)
+                setattr(self, "feat_{}".format(index), feature)
 
     def __getitem__(self, name):
         for index in range(FEATURE_SLOTS):

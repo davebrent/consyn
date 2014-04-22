@@ -32,7 +32,6 @@ def cmd_add(session, path, bufsize=settings.BUFSIZE, hopsize=settings.HOPSIZE,
         >> tasks.IterFrames() \
         >> tasks.SegmentFrames(
             winsize=bufsize,
-            hopsize=hopsize,
             method=method,
             threshold=threshold) \
         >> tasks.AnalyseSegments(winsize=bufsize, hopsize=hopsize)

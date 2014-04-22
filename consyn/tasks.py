@@ -57,23 +57,26 @@ class IterFrames(Task):
     def __call__(self, pipe):
         for state in pipe:
             index = 0
-            position = 0
+            positions = {}
 
             while True:
                 channels, read = state["soundfile"].do_multi()
 
                 for channel, samples in enumerate(channels):
+                    if channel not in positions:
+                        positions[channel] = 0
+
                     state["samplerate"] = state["soundfile"].samplerate
-                    state["position"] = position
+                    state["position"] = positions[channel]
                     state["channel"] = channel
                     state["samples"] = samples
                     state["samples_read"] = read
                     state["index"] = index
+
+                    positions[channel] += read
                     yield state
 
                 index += 1
-                position += read
-
                 if read < state["soundfile"].hop_size:
                     break
 
@@ -83,27 +86,50 @@ class IterFrames(Task):
 class SegmentFrames(Task):
     # Frames must be in order of there position but may be mixed by channel.
 
-    def __init__(self, winsize=1024, hopsize=512, threshold=-70,
-                 method="default", min_slice_size=8192):
+    def __init__(self, winsize=1024, threshold=-70, method="default",
+                 min_slice_size=8192):
         super(SegmentFrames, self).__init__()
         self.winsize = winsize
-        self.hopsize = hopsize
+        self.hopsize = winsize
         self.threshold = threshold
         self.method = method
         self.min_slice_size = min_slice_size
 
-        self.detectors = {"0": self._detector()}
-        self.buffers = {"0": numpy.array([], dtype=DTYPE)}
-        self.onsets = {"0": []}
+        self.detectors = {}
+        self.buffers = {0: numpy.array([], dtype=DTYPE)}
+        self.onsets = {0: []}
+        self.positions = {0: 0}
 
     def _detector(self):
         detector = aubio.onset(self.method, self.winsize, self.hopsize)
         detector.set_threshold(self.threshold)
         return detector
 
+    def _flush(self, channel, path, samplerate):
+        segment_length = self.onsets[channel][1] - self.onsets[channel][0]
+        segment = self.buffers[channel][:segment_length]
+        self.buffers[channel] = self.buffers[channel][segment_length:]
+
+        position = self.onsets[channel][0]
+        self.onsets[channel] = [self.onsets[channel][1]]
+
+        return State(initial={
+            "samplerate": samplerate,
+            "path": path,
+            "samples": segment,
+            "channel": channel,
+            "position": position,
+            "duration": segment_length
+        })
+
     def __call__(self, pipe):
+        path = None
+        samplerate = None
+
         for state in pipe:
+            path = state["path"]
             channel = state["channel"]
+            samplerate = state["samplerate"]
 
             if channel not in self.detectors:
                 self.detectors[channel] = self._detector()
@@ -111,6 +137,10 @@ class SegmentFrames(Task):
                 self.buffers[channel] = numpy.array([], dtype=DTYPE)
             if channel not in self.onsets:
                 self.onsets[channel] = []
+            if channel not in self.positions:
+                self.positions[channel] = 0
+
+            self.positions[channel] = state["position"] + state["samples_read"]
 
             self.buffers[channel] = numpy.concatenate(
                 (self.buffers[channel], state["samples"]))
@@ -122,27 +152,18 @@ class SegmentFrames(Task):
             position = detector.get_last()
             length = len(self.onsets[channel])
 
-            if (length == 1 and (position - self.onsets[channel][0]) >
-                    self.min_slice_size) or length == 0:
+            if length == 0 or (position - self.onsets[channel][0] >
+                               self.min_slice_size):
                 self.onsets[channel].append(position)
 
-            if length != 2:
+            if len(self.onsets[channel]) != 2:
                 continue
 
-            segment_length = self.onsets[channel][1] - self.onsets[channel][0]
-            segment = self.buffers[channel][:segment_length]
-            self.buffers[channel] = self.buffers[channel][segment_length:]
+            yield self._flush(channel, path, samplerate)
 
-            yield State(initial={
-                "samplerate": state["samplerate"],
-                "path": state["path"],
-                "samples": segment,
-                "channel": channel,
-                "position": self.onsets[channel][0],
-                "duration": segment_length
-            })
-
-            self.onsets[channel] = [self.onsets[channel][1]]
+        for channel in self.onsets:
+            self.onsets[channel].append(self.positions[channel])
+            yield self._flush(channel, path, samplerate)
 
 
 class AnalyseSegments(Task):

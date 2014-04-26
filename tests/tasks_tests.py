@@ -1,7 +1,11 @@
+import math
 import os
 import unittest
-from consyn import tasks
+
+import numpy
+
 from consyn import pipeline
+from consyn import tasks
 
 
 SOUND_DIR = os.path.abspath(
@@ -76,3 +80,54 @@ class SegmentFramesTest(unittest.TestCase):
 
     def test_simple_mono_segments(self):
         self._onset_test("amen-mono.wav", 1, 10, 70560)
+
+
+class AnalyseSegmentsTest(unittest.TestCase):
+
+    def test_same_buffersize(self):
+        bufsize = 1024
+        duration = 70560
+        channels = 2
+        path = os.path.join(SOUND_DIR, "amen-stereo.wav")
+
+        soundfile = tasks.Soundfile(bufsize=bufsize, hopsize=bufsize)
+        analysis = tasks.AnalyseSegments(winsize=bufsize, hopsize=bufsize)
+
+        result = [pipeline.State(initial={"path": path})] \
+            >> soundfile \
+            >> tasks.IterFrames() \
+            >> analysis \
+            >> list
+
+        soundfile.close()
+        self.assertEqual(math.ceil(duration * channels / float(bufsize)),
+                         len(result))
+
+        for res in result:
+            for method in analysis.methods:
+                self.assertIsInstance(res["features"][method], numpy.float32)
+
+    def test_different_sizes(self):
+        bufsize = 1024
+        path = os.path.join(SOUND_DIR, "amen-stereo.wav")
+
+        soundfile = tasks.Soundfile(bufsize=bufsize, hopsize=bufsize)
+        analysis = tasks.AnalyseSegments(winsize=1024, hopsize=512)
+
+        result = [pipeline.State(initial={"path": path})] \
+            >> soundfile \
+            >> tasks.IterFrames() \
+            >> tasks.SegmentFrames(
+                winsize=1024,
+                threshold=0,
+                min_slice_size=0,
+                method="default") \
+            >> analysis \
+            >> list
+
+        soundfile.close()
+        self.assertEqual(len(result), 20)
+
+        for res in result:
+            for method in analysis.methods:
+                self.assertIsInstance(res["features"][method], numpy.float32)

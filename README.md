@@ -1,4 +1,4 @@
-# Consyn (Work in progress)
+# Consyn (WIP)
 
 A [Concatenative synthesis](http://en.wikipedia.org/wiki/Concatenative_synthesis)
 command line tool.
@@ -16,21 +16,3 @@ command line tool.
 * Install the rest of the python dependencies ``pip install -r requirements.txt``
 * ``python setup.py develop``
 * ``python setup.py test``
-
-## Usage
-
-Calculate audio features and add files to a local sqlite database
-
-    consyn add path/to/some/audio.mp3
-    consyn add path/to/more/audio.wav
-    consyn add path/to/another.mp3
-
-Print the current contents of the database
-
-    consyn status
-
-Create and save an audio mosaic to ``outputfile.wav``, using the first file
-added, as the target and the second and third files added as sources for
-fragments of sound.
-
-    consyn mosaic outputfile.wav 1 2 3

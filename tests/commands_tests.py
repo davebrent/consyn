@@ -2,14 +2,8 @@ import os
 import unittest
 from consyn import commands
 
-
-SOUND_DIR = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), "sounds"))
-
-
-class DummySession(object):
-    def add(self, obj):
-        pass
+from . import SOUND_DIR
+from . import DummySession
 
 
 class AddCorpusTests(unittest.TestCase):

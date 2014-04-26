@@ -7,10 +7,10 @@ import numpy
 from consyn import pipeline
 from consyn import tasks
 from consyn import models
+from consyn import commands
 
-
-SOUND_DIR = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), "sounds"))
+from . import SOUND_DIR
+from . import DummySession
 
 
 class SoundfileTests(unittest.TestCase):
@@ -182,3 +182,20 @@ class UnitSampleReaderTests(unittest.TestCase):
 
         soundfile.close()
         self.assertEqual(index, reads - 1)
+
+
+class UnitGeneratorTests(unittest.TestCase):
+
+    def _test_iter_amount(self, name, num):
+        session = DummySession()
+        path = os.path.join(SOUND_DIR, name)
+        corpus = commands.add_corpus(session, path)
+        initial = [pipeline.State(initial={"corpus": corpus})]
+        results = initial >> tasks.UnitGenerator(session) >> list
+        self.assertEqual(len(results), num)
+
+    def test_stereo(self):
+        self._test_iter_amount("amen-stereo.wav", 20)
+
+    def test_mono(self):
+        self._test_iter_amount("amen-mono.wav", 10)

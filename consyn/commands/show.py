@@ -40,10 +40,10 @@ def command(session, paths=None, verbose=True, force=False):
         key=lambda state: state["unit"].corpus.path)
 
     results = [pipeline.State({"corpus": corpus})] \
-        >> tasks.IterCorpi(session) \
+        >> tasks.UnitGenerator(session) \
         >> soundfile \
-        >> tasks.ReadUnits() \
-        >> tasks.BuildCorpus() \
+        >> tasks.UnitSampleReader() \
+        >> tasks.CorpusSampleBuilder() \
         >> list
 
     soundfile.close()

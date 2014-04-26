@@ -6,6 +6,7 @@ import numpy
 
 from consyn import pipeline
 from consyn import tasks
+from consyn import models
 
 
 SOUND_DIR = os.path.abspath(
@@ -27,7 +28,7 @@ class SoundfileTests(unittest.TestCase):
         self.assertTrue(path not in soundfile.soundfiles)
 
 
-class IterFramesTest(unittest.TestCase):
+class FrameSampleReaderTest(unittest.TestCase):
 
     def test_iterframes_in_order(self):
         path = os.path.join(SOUND_DIR, "amen-stereo.wav")
@@ -35,7 +36,7 @@ class IterFramesTest(unittest.TestCase):
 
         result = [pipeline.State(initial={"path": path})] \
             >> soundfile \
-            >> tasks.IterFrames() \
+            >> tasks.FrameSampleReader() \
             >> list
 
         soundfile.close()
@@ -50,7 +51,7 @@ class IterFramesTest(unittest.TestCase):
         self.assertEqual(previous, 68)
 
 
-class SegmentFramesTest(unittest.TestCase):
+class FrameOnsetSlicerTest(unittest.TestCase):
 
     def _onset_test(self, path, channels, expected_onsets, expected_duration):
         path = os.path.join(SOUND_DIR, path)
@@ -58,8 +59,8 @@ class SegmentFramesTest(unittest.TestCase):
 
         result = [pipeline.State(initial={"path": path})] \
             >> soundfile \
-            >> tasks.IterFrames() \
-            >> tasks.SegmentFrames(
+            >> tasks.FrameSampleReader() \
+            >> tasks.FrameOnsetSlicer(
                 winsize=1024,
                 threshold=0,
                 min_slice_size=0,
@@ -82,7 +83,7 @@ class SegmentFramesTest(unittest.TestCase):
         self._onset_test("amen-mono.wav", 1, 10, 70560)
 
 
-class AnalyseSegmentsTest(unittest.TestCase):
+class SampleAnalyserTest(unittest.TestCase):
 
     def test_same_buffersize(self):
         bufsize = 1024
@@ -91,12 +92,12 @@ class AnalyseSegmentsTest(unittest.TestCase):
         path = os.path.join(SOUND_DIR, "amen-stereo.wav")
 
         soundfile = tasks.Soundfile(bufsize=bufsize, hopsize=bufsize)
-        analysis = tasks.AnalyseSegments(winsize=bufsize, hopsize=bufsize)
+        analyser = tasks.SampleAnalyser(winsize=bufsize, hopsize=bufsize)
 
         result = [pipeline.State(initial={"path": path})] \
             >> soundfile \
-            >> tasks.IterFrames() \
-            >> analysis \
+            >> tasks.FrameSampleReader() \
+            >> analyser \
             >> list
 
         soundfile.close()
@@ -104,7 +105,7 @@ class AnalyseSegmentsTest(unittest.TestCase):
                          len(result))
 
         for res in result:
-            for method in analysis.methods:
+            for method in analyser.methods:
                 self.assertIsInstance(res["features"][method], numpy.float32)
 
     def test_different_sizes(self):
@@ -112,22 +113,72 @@ class AnalyseSegmentsTest(unittest.TestCase):
         path = os.path.join(SOUND_DIR, "amen-stereo.wav")
 
         soundfile = tasks.Soundfile(bufsize=bufsize, hopsize=bufsize)
-        analysis = tasks.AnalyseSegments(winsize=1024, hopsize=512)
+        analyser = tasks.SampleAnalyser(winsize=1024, hopsize=512)
 
         result = [pipeline.State(initial={"path": path})] \
             >> soundfile \
-            >> tasks.IterFrames() \
-            >> tasks.SegmentFrames(
+            >> tasks.FrameSampleReader() \
+            >> tasks.FrameOnsetSlicer(
                 winsize=1024,
                 threshold=0,
                 min_slice_size=0,
                 method="default") \
-            >> analysis \
+            >> analyser \
             >> list
 
         soundfile.close()
         self.assertEqual(len(result), 20)
 
         for res in result:
-            for method in analysis.methods:
+            for method in analyser.methods:
                 self.assertIsInstance(res["features"][method], numpy.float32)
+
+
+class UnitSampleReaderTests(unittest.TestCase):
+
+    def test_read_whole_file(self):
+        bufsize = 1024
+        path = os.path.join(SOUND_DIR, "amen-stereo.wav")
+        unit = models.Unit(channel=0, position=0, duration=70560)
+
+        self.assertEqual(unit.duration, 70560)
+        self.assertEqual(unit.channel, 0)
+        self.assertEqual(unit.position, 0)
+
+        initial = [pipeline.State(initial={"path": path, "unit": unit})]
+        soundfile = tasks.Soundfile(bufsize=bufsize, hopsize=bufsize)
+        reader = tasks.UnitSampleReader()
+        result = initial >> soundfile >> reader >> list
+        soundfile.close()
+
+        self.assertEqual(len(result), 1)
+        samples = result[0]["samples"]
+
+        self.assertEqual(samples.shape, (70560,))
+        self.assertNotEqual(numpy.sum(samples), 0)
+
+    def test_multiple_reads(self):
+        reads = 10
+        bufsize = 1024
+        path = os.path.join(SOUND_DIR, "amen-stereo.wav")
+        unit = models.Unit(channel=0, position=0, duration=70560)
+
+        self.assertEqual(unit.duration, 70560)
+        self.assertEqual(unit.channel, 0)
+        self.assertEqual(unit.position, 0)
+
+        soundfile = tasks.Soundfile(bufsize=bufsize, hopsize=bufsize)
+
+        for index in range(reads):
+            initial = [pipeline.State(initial={"path": path, "unit": unit})]
+            reader = tasks.UnitSampleReader()
+            result = initial >> soundfile >> reader >> list
+
+            self.assertEqual(len(result), 1)
+            samples = result[0]["samples"]
+
+            self.assertEqual(samples.shape, (70560,))
+            self.assertNotEqual(numpy.sum(samples), 0)
+
+        soundfile.close()
+        self.assertEqual(index, reads - 1)

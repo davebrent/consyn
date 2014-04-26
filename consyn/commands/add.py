@@ -29,12 +29,12 @@ def cmd_add(session, path, bufsize=settings.BUFSIZE, hopsize=settings.HOPSIZE,
 
     results = [pipeline.State({"path": path})] \
         >> soundfile \
-        >> tasks.IterFrames() \
-        >> tasks.SegmentFrames(
+        >> tasks.FrameSampleReader() \
+        >> tasks.FrameOnsetSlicer(
             winsize=bufsize,
             method=method,
             threshold=threshold) \
-        >> tasks.AnalyseSegments(winsize=bufsize, hopsize=hopsize)
+        >> tasks.SampleAnalyser(winsize=bufsize, hopsize=hopsize)
 
     corpus = models.Corpus(duration=0, channels=1)
 

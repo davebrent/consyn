@@ -24,13 +24,13 @@ def cmd_mosaic(session, outfile, target, corpi):
         key=lambda state: state["unit"].corpus.path)
 
     [pipeline.State({"corpus": target.path, "out": outfile})] \
-        >> tasks.IterCorpi(session) \
-        >> tasks.SimilarUnits(session, corpi) \
+        >> tasks.UnitGenerator(session) \
+        >> tasks.ManhattenUnitSearcher(session, corpi) \
         >> soundfile \
-        >> tasks.ReadUnits() \
-        >> tasks.TrimUnits() \
-        >> tasks.BuildCorpus() \
-        >> tasks.WriteCorpus() \
+        >> tasks.UnitSampleReader() \
+        >> tasks.UnitSampleClipper() \
+        >> tasks.CorpusSampleBuilder() \
+        >> tasks.CorpusWriter() \
         >> list
 
     soundfile.close()

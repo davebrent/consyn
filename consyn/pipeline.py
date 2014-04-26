@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 
-class Task(object):
+class Stream(object):
 
     def __init__(self, iterable=None):
         self.iterator = iter(iterable if iterable else [])
@@ -24,10 +24,10 @@ class Task(object):
             return outpipe(inpipe)
 
     def __rshift__(self, outpipe):
-        return Task.pipe(self, outpipe)
+        return Stream.pipe(self, outpipe)
 
     def __rrshift__(self, inpipe):
-        return Task.pipe(inpipe, self)
+        return Stream.pipe(inpipe, self)
 
 
 class State(object):

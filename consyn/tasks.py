@@ -5,7 +5,7 @@ from sqlalchemy.sql import func
 
 from .models import Corpus
 from .models import Features
-from .pipeline import Task
+from .pipeline import Stream
 from .pipeline import State
 from .settings import DTYPE
 from .settings import FEATURE_SLOTS
@@ -23,7 +23,7 @@ def _slice_array(arr, bufsize=1024, hopsize=512):
         position += hopsize
 
 
-class Soundfile(Task):
+class Soundfile(Stream):
 
     def __init__(self, bufsize=1024, hopsize=512,
                  key=lambda state: state["path"]):
@@ -50,15 +50,17 @@ class Soundfile(Task):
             del self.soundfiles[path]
 
 
-class IterFrames(Task):
+class FrameSampleReader(Stream):
 
     def __call__(self, pipe):
         for state in pipe:
             index = 0
             positions = {}
+            soundfile = state["soundfile"]
+            soundfile.seek(0)
 
             while True:
-                channels, read = state["soundfile"].do_multi()
+                channels, read = soundfile.do_multi()
 
                 for channel, samples in enumerate(channels):
                     if channel not in positions:
@@ -81,12 +83,12 @@ class IterFrames(Task):
             state.soundfile.close()
 
 
-class SegmentFrames(Task):
+class FrameOnsetSlicer(Stream):
     # Frames must be in order of there position but may be mixed by channel.
 
     def __init__(self, winsize=1024, threshold=-70, method="default",
                  min_slice_size=8192):
-        super(SegmentFrames, self).__init__()
+        super(FrameOnsetSlicer, self).__init__()
         self.winsize = winsize
         self.hopsize = winsize
         self.threshold = threshold
@@ -164,11 +166,11 @@ class SegmentFrames(Task):
             yield self._flush(channel, path, samplerate)
 
 
-class AnalyseSegments(Task):
+class SampleAnalyser(Stream):
 
     def __init__(self, samplerate=44100, winsize=1024, hopsize=512, filters=40,
                  coeffs=13):
-        super(AnalyseSegments, self).__init__()
+        super(SampleAnalyser, self).__init__()
         self.winsize = winsize
         self.hopsize = hopsize
         self.descriptors = {}
@@ -224,10 +226,10 @@ class AnalyseSegments(Task):
             yield state
 
 
-class IterCorpi(Task):
+class UnitGenerator(Stream):
 
     def __init__(self, session):
-        super(IterCorpi, self).__init__()
+        super(UnitGenerator, self).__init__()
         self.session = session
 
     def __call__(self, pipe):
@@ -241,11 +243,10 @@ class IterCorpi(Task):
                 yield state
 
 
-class SimilarUnits(Task):
-    # uses the manhatten distance
+class ManhattenUnitSearcher(Stream):
 
     def __init__(self, session, corpi):
-        super(SimilarUnits, self).__init__()
+        super(ManhattenUnitSearcher, self).__init__()
         self.corpi = corpi
         self.session = session
 
@@ -270,7 +271,7 @@ class SimilarUnits(Task):
             yield state
 
 
-class ReadUnits(Task):
+class UnitSampleReader(Stream):
 
     def __call__(self, pipe):
         for state in pipe:
@@ -298,7 +299,7 @@ class ReadUnits(Task):
             yield state
 
 
-class TrimUnits(Task):
+class UnitSampleClipper(Stream):
 
     def __call__(self, pipe):
         for state in pipe:
@@ -317,7 +318,7 @@ class TrimUnits(Task):
             yield state
 
 
-class EnvelopeUnits(Task):
+class EnvelopeUnits(Stream):
 
     def __call__(self, pipe):
         for state in pipe:
@@ -327,10 +328,10 @@ class EnvelopeUnits(Task):
             yield state
 
 
-class BuildCorpus(Task):
+class CorpusSampleBuilder(Stream):
 
     def __init__(self, channels=2):
-        super(BuildCorpus, self).__init__()
+        super(CorpusSampleBuilder, self).__init__()
         self.channels = channels
         self.buffers = {}
         self.counts = {}
@@ -373,7 +374,7 @@ class BuildCorpus(Task):
                 yield new_state
 
 
-class WriteCorpus(Task):
+class CorpusWriter(Stream):
 
     def __call__(self, pipe):
         for state in pipe:
@@ -392,6 +393,4 @@ class WriteCorpus(Task):
             sink.close()
             del sink
 
-            yield State(initial={
-                "out": state["out"]
-            })
+            yield State(initial={"out": state["out"]})

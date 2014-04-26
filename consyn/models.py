@@ -32,6 +32,13 @@ class Corpus(Base):
         name, _ = os.path.splitext(os.path.basename(self.path))
         return name
 
+    @classmethod
+    def by_id_or_name(cls, session, parameter):
+        if parameter.isdigit():
+            return session.query(cls).get(int(parameter))
+        return session.query(cls).filter_by(
+            path=os.path.abspath(parameter)).one()
+
 
 class Unit(Base):
     __tablename__ = "units"

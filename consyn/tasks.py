@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-import os
-
 import aubio
 import numpy
 from sqlalchemy.sql import func
@@ -234,17 +232,11 @@ class IterCorpi(Task):
 
     def __call__(self, pipe):
         for state in pipe:
-            param = state["corpus"]
+            if not isinstance(state["corpus"], Corpus):
+                state["corpus"] = Corpus.by_id_or_name(
+                    self.session, state["corpus"])
 
-            if param.isdigit():
-                param = int(param)
-                corpus = self.session.query(Corpus).get(param)
-            else:
-                corpus = self.session.query(Corpus).filter(
-                    Corpus.path == os.path.abspath(param)).one()
-
-            state["corpus"] = corpus
-            for unit in corpus.units:
+            for unit in state["corpus"].units:
                 state["unit"] = unit
                 yield state
 
@@ -370,11 +362,15 @@ class BuildCorpus(Task):
                     corpus.path not in self.end:
                 self.end[corpus.path] = True
 
-                yield State(initial={
+                new_state = State(initial={
                     "corpus": state["corpus"],
-                    "buffer": buff,
-                    "out": state["out"]
+                    "buffer": buff
                 })
+
+                if state.values.get("out"):
+                    new_state["out"] = state["out"]
+
+                yield new_state
 
 
 class WriteCorpus(Task):

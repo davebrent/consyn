@@ -247,7 +247,7 @@ class ManhattenUnitSearcher(Stream):
 
     def __init__(self, session, corpi):
         super(ManhattenUnitSearcher, self).__init__()
-        self.corpi = corpi
+        self.corpi = [corpus.id for corpus in corpi]
         self.session = session
 
     def __call__(self, pipe):

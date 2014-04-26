@@ -7,6 +7,7 @@ from sqlalchemy import Integer
 from sqlalchemy import UnicodeText
 from sqlalchemy import Table
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.orm import relationship
 
 from .settings import FEATURE_SLOTS
@@ -36,8 +37,11 @@ class Corpus(Base):
     def by_id_or_name(cls, session, parameter):
         if parameter.isdigit():
             return session.query(cls).get(int(parameter))
-        return session.query(cls).filter_by(
-            path=os.path.abspath(parameter)).one()
+        try:
+            return session.query(cls).filter_by(
+                path=os.path.abspath(parameter)).one()
+        except NoResultFound:
+            return None
 
 
 class Unit(Base):

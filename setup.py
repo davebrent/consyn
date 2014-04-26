@@ -14,5 +14,5 @@ setup(name="consyn",
       test_suite="nose.collector",
       entry_points="""
       [console_scripts]
-      consyn = consyn.commands:main
+      consyn = consyn.cli:main
       """,)

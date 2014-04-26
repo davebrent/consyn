@@ -12,9 +12,12 @@ options:
 import os
 import docopt
 
-from .. import models
+from clint.textui import colored
+from clint.textui import puts
+
 from .. import tasks
 from .. import pipeline
+from .. import commands
 
 
 def cmd_mosaic(session, outfile, target, corpi):
@@ -42,10 +45,11 @@ def command(session, verbose=True, force=False):
 
     if os.path.isfile(args["<outfile>"]):
         if verbose:
-            print "File already exists"
+            puts(colored.red("File already exists"))
     else:
-        target = session.query(models.Corpus) \
-            .filter(models.Corpus.id == int(args["<target>"])).one()
+        target = commands.get_or_add_corpus(session, args["<target>"])
+        corpi = [commands.get_or_add_corpus(session, corpus)
+                 for corpus in args["<corpi>"]]
 
-        corpi = args["<corpi>"]
+        session.commit()
         cmd_mosaic(session, args["<outfile>"], target, corpi)

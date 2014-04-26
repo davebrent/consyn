@@ -8,7 +8,8 @@ from . import models
 
 
 def add_corpus(session, path, bufsize=settings.BUFSIZE,
-               hopsize=settings.HOPSIZE, method="default", threshold=-70):
+               hopsize=settings.HOPSIZE, minsize=settings.BUFSIZE,
+               method="default", threshold=0):
 
     soundfile = tasks.Soundfile(bufsize=bufsize, hopsize=bufsize)
 
@@ -17,6 +18,7 @@ def add_corpus(session, path, bufsize=settings.BUFSIZE,
         >> tasks.FrameSampleReader() \
         >> tasks.FrameOnsetSlicer(
             winsize=bufsize,
+            min_slice_size=minsize,
             method=method,
             threshold=threshold) \
         >> tasks.SampleAnalyser(winsize=bufsize, hopsize=hopsize)

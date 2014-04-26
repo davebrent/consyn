@@ -5,8 +5,6 @@ usage: consyn mosaic <outfile> <target> <corpi>...
 
 options:
    -f, --force              Overwrite file(s) if already exists.
-   -b, --bufsize <bufsize>  Buffer size used for analysis in samples.
-   -h, --hopsize <hopsize>  Hopsize used for analysis in samples.
 
 """
 import os
@@ -43,9 +41,8 @@ def cmd_mosaic(session, outfile, target, corpi):
 def command(session, verbose=True, force=False):
     args = docopt.docopt(__doc__)
 
-    if os.path.isfile(args["<outfile>"]):
-        if verbose:
-            puts(colored.red("File already exists"))
+    if os.path.isfile(args["<outfile>"]) and not args["--force"]:
+        puts(colored.red("File already exists"))
     else:
         target = commands.get_or_add_corpus(session, args["<target>"])
         corpi = [commands.get_or_add_corpus(session, corpus)

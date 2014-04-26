@@ -47,6 +47,13 @@ def command(session):
                         .format(exists.name)))
                 continue
         else:
-            corpus = commands.add_corpus(session, path)
+            corpus = commands.add_corpus(
+                session, path,
+                bufsize=int(args["--bufsize"]),
+                hopsize=int(args["--hopsize"]),
+                minsize=int(args["--minsize"]),
+                method=args["--onset-method"],
+                threshold=int(args["--onset-threshold"]))
+
             session.commit()
             puts(colored.green("Successfully added {}".format(corpus.name)))

@@ -4,8 +4,7 @@ import unittest
 
 import numpy
 
-from consyn import pipeline
-from consyn import tasks
+from consyn import streams
 from consyn import models
 from consyn import commands
 
@@ -17,8 +16,8 @@ class SoundfileTests(unittest.TestCase):
 
     def test_open_close_soundfile_task(self):
         path = os.path.join(SOUND_DIR, "amen-stereo.wav")
-        initial = pipeline.State(initial={"path": path})
-        soundfile = tasks.Soundfile(bufsize=1024, hopsize=1024)
+        initial = streams.Pool(initial={"path": path})
+        soundfile = streams.Soundfile(bufsize=1024, hopsize=1024)
         result = [initial] >> soundfile >> list
 
         self.assertEqual(len(result), 1)
@@ -32,11 +31,11 @@ class FrameSampleReaderTest(unittest.TestCase):
 
     def test_iterframes_in_order(self):
         path = os.path.join(SOUND_DIR, "amen-stereo.wav")
-        soundfile = tasks.Soundfile(bufsize=1024, hopsize=1024)
+        soundfile = streams.Soundfile(bufsize=1024, hopsize=1024)
 
-        result = [pipeline.State(initial={"path": path})] \
+        result = [streams.Pool(initial={"path": path})] \
             >> soundfile \
-            >> tasks.FrameSampleReader() \
+            >> streams.FrameSampleReader() \
             >> list
 
         soundfile.close()
@@ -51,16 +50,16 @@ class FrameSampleReaderTest(unittest.TestCase):
         self.assertEqual(previous, 68)
 
 
-class FrameOnsetSlicerTest(unittest.TestCase):
+class OnsetSlicerTest(unittest.TestCase):
 
     def _onset_test(self, path, channels, expected_onsets, expected_duration):
         path = os.path.join(SOUND_DIR, path)
-        soundfile = tasks.Soundfile(bufsize=1024, hopsize=1024)
+        soundfile = streams.Soundfile(bufsize=1024, hopsize=1024)
 
-        result = [pipeline.State(initial={"path": path})] \
+        result = [streams.Pool(initial={"path": path})] \
             >> soundfile \
-            >> tasks.FrameSampleReader() \
-            >> tasks.FrameOnsetSlicer(
+            >> streams.FrameSampleReader() \
+            >> streams.OnsetSlicer(
                 winsize=1024,
                 threshold=0,
                 min_slice_size=0,
@@ -91,12 +90,12 @@ class SampleAnalyserTest(unittest.TestCase):
         channels = 2
         path = os.path.join(SOUND_DIR, "amen-stereo.wav")
 
-        soundfile = tasks.Soundfile(bufsize=bufsize, hopsize=bufsize)
-        analyser = tasks.SampleAnalyser(winsize=bufsize, hopsize=bufsize)
+        soundfile = streams.Soundfile(bufsize=bufsize, hopsize=bufsize)
+        analyser = streams.SampleAnalyser(winsize=bufsize, hopsize=bufsize)
 
-        result = [pipeline.State(initial={"path": path})] \
+        result = [streams.Pool(initial={"path": path})] \
             >> soundfile \
-            >> tasks.FrameSampleReader() \
+            >> streams.FrameSampleReader() \
             >> analyser \
             >> list
 
@@ -112,13 +111,13 @@ class SampleAnalyserTest(unittest.TestCase):
         bufsize = 1024
         path = os.path.join(SOUND_DIR, "amen-stereo.wav")
 
-        soundfile = tasks.Soundfile(bufsize=bufsize, hopsize=bufsize)
-        analyser = tasks.SampleAnalyser(winsize=1024, hopsize=512)
+        soundfile = streams.Soundfile(bufsize=bufsize, hopsize=bufsize)
+        analyser = streams.SampleAnalyser(winsize=1024, hopsize=512)
 
-        result = [pipeline.State(initial={"path": path})] \
+        result = [streams.Pool(initial={"path": path})] \
             >> soundfile \
-            >> tasks.FrameSampleReader() \
-            >> tasks.FrameOnsetSlicer(
+            >> streams.FrameSampleReader() \
+            >> streams.OnsetSlicer(
                 winsize=1024,
                 threshold=0,
                 min_slice_size=0,
@@ -145,9 +144,9 @@ class UnitSampleReaderTests(unittest.TestCase):
         self.assertEqual(unit.channel, 0)
         self.assertEqual(unit.position, 0)
 
-        initial = [pipeline.State(initial={"path": path, "unit": unit})]
-        soundfile = tasks.Soundfile(bufsize=bufsize, hopsize=bufsize)
-        reader = tasks.UnitSampleReader()
+        initial = [streams.Pool(initial={"path": path, "unit": unit})]
+        soundfile = streams.Soundfile(bufsize=bufsize, hopsize=bufsize)
+        reader = streams.UnitSampleReader()
         result = initial >> soundfile >> reader >> list
         soundfile.close()
 
@@ -167,11 +166,11 @@ class UnitSampleReaderTests(unittest.TestCase):
         self.assertEqual(unit.channel, 0)
         self.assertEqual(unit.position, 0)
 
-        soundfile = tasks.Soundfile(bufsize=bufsize, hopsize=bufsize)
+        soundfile = streams.Soundfile(bufsize=bufsize, hopsize=bufsize)
 
         for index in range(reads):
-            initial = [pipeline.State(initial={"path": path, "unit": unit})]
-            reader = tasks.UnitSampleReader()
+            initial = [streams.Pool(initial={"path": path, "unit": unit})]
+            reader = streams.UnitSampleReader()
             result = initial >> soundfile >> reader >> list
 
             self.assertEqual(len(result), 1)
@@ -190,8 +189,8 @@ class UnitGeneratorTests(unittest.TestCase):
         session = DummySession()
         path = os.path.join(SOUND_DIR, name)
         corpus = commands.add_corpus(session, path)
-        initial = [pipeline.State(initial={"corpus": corpus})]
-        results = initial >> tasks.UnitGenerator(session) >> list
+        initial = [streams.Pool(initial={"corpus": corpus})]
+        results = initial >> streams.UnitGenerator(session) >> list
         self.assertEqual(len(results), num)
 
     def test_stereo(self):
@@ -201,20 +200,20 @@ class UnitGeneratorTests(unittest.TestCase):
         self._test_iter_amount("amen-mono.wav", 10)
 
 
-class UnitSampleClipperTests(unittest.TestCase):
+class DurationClipperTests(unittest.TestCase):
 
     def _test_simple(self, samples, unit_dur, unit_pos, target_dur,
                      target_pos):
         target = models.Unit(duration=target_dur, position=target_pos)
         unit = models.Unit(duration=unit_dur, position=unit_pos)
 
-        state = pipeline.State(initial={
+        state = streams.Pool(initial={
             "samples": samples,
             "target": target,
             "unit": unit
         })
 
-        results = [state] >> tasks.UnitSampleClipper() >> list
+        results = [state] >> streams.DurationClipper() >> list
 
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0]["unit"].duration, target.duration)

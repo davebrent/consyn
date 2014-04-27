@@ -13,25 +13,25 @@ import docopt
 from clint.textui import colored
 from clint.textui import puts
 
-from .. import tasks
-from .. import pipeline
+# from .. import streams
+from .. import streams
 from .. import commands
 
 
 def cmd_mosaic(session, outfile, target, corpi):
-    soundfile = tasks.Soundfile(
+    soundfile = streams.Soundfile(
         bufsize=2048,
         hopsize=2048,
         key=lambda state: state["unit"].corpus.path)
 
-    [pipeline.State({"corpus": target.path, "out": outfile})] \
-        >> tasks.UnitGenerator(session) \
-        >> tasks.ManhattenUnitSearcher(session, corpi) \
+    [streams.Pool({"corpus": target.path, "out": outfile})] \
+        >> streams.UnitGenerator(session) \
+        >> streams.ManhattenDistanceSelection(session, corpi) \
         >> soundfile \
-        >> tasks.UnitSampleReader() \
-        >> tasks.UnitSampleClipper() \
-        >> tasks.CorpusSampleBuilder() \
-        >> tasks.CorpusWriter() \
+        >> streams.UnitSampleReader() \
+        >> streams.DurationClipper() \
+        >> streams.CorpusSampleBuilder() \
+        >> streams.CorpusWriter() \
         >> list
 
     soundfile.close()

@@ -2,8 +2,7 @@
 import os
 
 from . import settings
-from . import tasks
-from . import pipeline
+from . import streams
 from . import models
 
 
@@ -11,17 +10,17 @@ def add_corpus(session, path, bufsize=settings.BUFSIZE,
                hopsize=settings.HOPSIZE, minsize=settings.BUFSIZE,
                method="default", threshold=0):
 
-    soundfile = tasks.Soundfile(bufsize=bufsize, hopsize=bufsize)
+    soundfile = streams.Soundfile(bufsize=bufsize, hopsize=bufsize)
 
-    results = [pipeline.State({"path": path})] \
+    results = [streams.Pool({"path": path})] \
         >> soundfile \
-        >> tasks.FrameSampleReader() \
-        >> tasks.FrameOnsetSlicer(
+        >> streams.FrameSampleReader() \
+        >> streams.OnsetSlicer(
             winsize=bufsize,
             min_slice_size=minsize,
             method=method,
             threshold=threshold) \
-        >> tasks.SampleAnalyser(winsize=bufsize, hopsize=hopsize)
+        >> streams.SampleAnalyser(winsize=bufsize, hopsize=hopsize)
 
     corpus = models.Corpus(duration=0, channels=1)
 

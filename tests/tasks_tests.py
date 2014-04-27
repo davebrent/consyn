@@ -199,3 +199,33 @@ class UnitGeneratorTests(unittest.TestCase):
 
     def test_mono(self):
         self._test_iter_amount("amen-mono.wav", 10)
+
+
+class UnitSampleClipperTests(unittest.TestCase):
+
+    def _test_simple(self, samples, unit_dur, unit_pos, target_dur,
+                     target_pos):
+        target = models.Unit(duration=target_dur, position=target_pos)
+        unit = models.Unit(duration=unit_dur, position=unit_pos)
+
+        state = pipeline.State(initial={
+            "samples": samples,
+            "target": target,
+            "unit": unit
+        })
+
+        results = [state] >> tasks.UnitSampleClipper() >> list
+
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0]["unit"].duration, target.duration)
+        self.assertEqual(results[0]["unit"].position, target.position)
+        self.assertEqual(results[0]["samples"].shape[0], target_dur)
+
+    def test_less_than(self):
+        self._test_simple(numpy.arange(18), 18, 3, 20, 2)
+
+    def test_more_than(self):
+        self._test_simple(numpy.arange(25), 25, 3, 20, 2)
+
+    def test_equal(self):
+        self._test_simple(numpy.arange(20), 20, 2, 20, 2)

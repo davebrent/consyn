@@ -9,12 +9,23 @@ options:
 """
 import os
 import docopt
-
 from clint.textui import colored
 from clint.textui import puts
+from clint.textui import progress
 
 from .. import streams
 from .. import commands
+
+
+class ProgressBar(object):
+
+    def __init__(self, size):
+        self.progress_bar = progress.bar(range(size))
+
+    def __call__(self, pipe):
+        for pool in pipe:
+            self.progress_bar.next()
+            yield pool
 
 
 def cmd_mosaic(session, outfile, target, corpi):
@@ -29,6 +40,7 @@ def cmd_mosaic(session, outfile, target, corpi):
         >> soundfile \
         >> streams.UnitSampleReader() \
         >> streams.DurationClipper() \
+        >> ProgressBar(len(target.units)) \
         >> streams.CorpusSampleBuilder(unit_key="target") \
         >> streams.CorpusWriter() \
         >> list

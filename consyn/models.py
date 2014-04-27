@@ -30,8 +30,10 @@ class Corpus(Base):
 
     @property
     def name(self):
-        name, _ = os.path.splitext(os.path.basename(self.path))
-        return name
+        if self.path:
+            name, _ = os.path.splitext(os.path.basename(self.path))
+            return name
+        return None
 
     @classmethod
     def by_id_or_name(cls, session, parameter):
@@ -43,6 +45,15 @@ class Corpus(Base):
         except NoResultFound:
             return None
 
+    def __repr__(self):
+        keys = ["id", "name", "duration", "channels", "samplerate"]
+        values = ["{}={}".format(key, getattr(self, key)) for key in keys]
+        values.append("units={}".format(len(self.units)))
+        return "<Corpus({})>".format(", ".join(values))
+
+    def __str__(self):
+        return self.__repr__()
+
 
 class Unit(Base):
     __tablename__ = "units"
@@ -52,6 +63,15 @@ class Unit(Base):
     position = Column(Integer, nullable=False)
     duration = Column(Integer, nullable=False)
     features = relationship("Features", uselist=False, backref="unit")
+
+    def __repr__(self):
+        keys = ["channel", "position", "duration"]
+        values = ["{}={}".format(key, getattr(self, key)) for key in keys]
+        values.insert(0, "corpus={}".format(self.corpus.name))
+        return "<Unit({})>".format(", ".join(values))
+
+    def __str__(self):
+        return self.__repr__()
 
 
 class Features(Base):

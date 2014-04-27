@@ -40,8 +40,6 @@ class DurationClipper(ResynthesisStream):
         elif duration > target.duration:
             tmp[0:target.duration] = samples[0:target.duration]
 
-        unit.position = target.position
-        unit.duration = target.duration
         return tmp, unit
 
 

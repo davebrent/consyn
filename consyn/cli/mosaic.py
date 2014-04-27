@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Create an audio mosaic
 
-usage: consyn mosaic <outfile> <target> <corpi>...
+usage: consyn mosaic <outfile> <target> <corpi>... [options]
 
 options:
    -f, --force              Overwrite file(s) if already exists.
@@ -29,7 +29,7 @@ def cmd_mosaic(session, outfile, target, corpi):
         >> soundfile \
         >> streams.UnitSampleReader() \
         >> streams.DurationClipper() \
-        >> streams.CorpusSampleBuilder() \
+        >> streams.CorpusSampleBuilder(unit_key="target") \
         >> streams.CorpusWriter() \
         >> list
 

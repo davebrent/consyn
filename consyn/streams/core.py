@@ -169,7 +169,7 @@ class UnitSampleReader(Stream):
                 buff[position:position + read] = samples[:read]
                 position += read
 
-                if position >= unit.duration:
+                if position >= unit.duration or read == 0:
                     break
 
             state["samples"] = buff
@@ -178,8 +178,9 @@ class UnitSampleReader(Stream):
 
 class CorpusSampleBuilder(Stream):
 
-    def __init__(self, channels=2):
+    def __init__(self, unit_key="unit", channels=2):
         super(CorpusSampleBuilder, self).__init__()
+        self.unit_key = unit_key
         self.channels = channels
         self.buffers = {}
         self.counts = {}
@@ -188,23 +189,22 @@ class CorpusSampleBuilder(Stream):
     def __call__(self, pipe):
         for state in pipe:
             corpus = state["corpus"]
-            unit = state["unit"]
+            target = state[self.unit_key]
             samples = state["samples"]
 
             if corpus.path in self.end:
                 continue
 
             if corpus.path not in self.buffers:
+                self.counts[corpus.path] = 0
                 self.buffers[corpus.path] = numpy.zeros(
                     (corpus.channels, corpus.duration),
                     dtype=DTYPE)
-            if corpus.path not in self.counts:
-                self.counts[corpus.path] = 0
 
             buff = self.buffers[corpus.path]
 
-            buff[unit.channel][
-                unit.position:unit.position + unit.duration] = samples
+            buff[target.channel][
+                target.position:target.position + target.duration] = samples
             self.counts[corpus.path] += 1
 
             if self.counts[corpus.path] == len(corpus.units) and \

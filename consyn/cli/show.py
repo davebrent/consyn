@@ -12,8 +12,7 @@ import docopt
 import numpy
 import matplotlib.pyplot as plt
 
-from .. import pipeline
-from .. import tasks
+from .. import streams
 from .. import models
 
 
@@ -34,16 +33,16 @@ def command(session, paths=None, verbose=True, force=False):
 
     corpus = models.Corpus.by_id_or_name(session, args["<input>"])
 
-    soundfile = tasks.Soundfile(
+    soundfile = streams.Soundfile(
         bufsize=int(args["--framesize"]),
         hopsize=int(args["--framesize"]),
         key=lambda state: state["unit"].corpus.path)
 
-    results = [pipeline.State({"corpus": corpus})] \
-        >> tasks.UnitGenerator(session) \
+    results = [streams.Pool({"corpus": corpus})] \
+        >> streams.UnitGenerator(session) \
         >> soundfile \
-        >> tasks.UnitSampleReader() \
-        >> tasks.CorpusSampleBuilder() \
+        >> streams.UnitSampleReader() \
+        >> streams.CorpusSampleBuilder() \
         >> list
 
     soundfile.close()

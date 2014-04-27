@@ -10,7 +10,7 @@ def add_corpus(session, path, bufsize=settings.BUFSIZE,
                hopsize=settings.HOPSIZE, minsize=settings.BUFSIZE,
                method="default", threshold=0):
 
-    soundfile = streams.Soundfile(bufsize=bufsize, hopsize=bufsize)
+    soundfile = streams.Soundfile(bufsize=bufsize, hopsize=hopsize)
 
     results = [streams.Pool({"path": path})] \
         >> soundfile \

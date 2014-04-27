@@ -13,7 +13,6 @@ import docopt
 from clint.textui import colored
 from clint.textui import puts
 
-# from .. import streams
 from .. import streams
 from .. import commands
 

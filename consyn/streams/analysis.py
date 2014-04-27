@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import aubio
 import numpy
 from .core import Stream

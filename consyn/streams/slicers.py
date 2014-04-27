@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import aubio
 import numpy
 import collections
@@ -39,21 +40,15 @@ class SliceStream(Stream):
         pass
 
 
-class OnsetSlicer(SliceStream):
+class BaseSlicer(SliceStream):
 
-    def __init__(self, winsize=1024, threshold=-70, method="default",
-                 min_slice_size=8192):
-        super(OnsetSlicer, self).__init__()
-        self.winsize = winsize
-        self.hopsize = winsize
-        self.threshold = threshold
-        self.method = method
+    def __init__(self, min_slice_size=8192):
+        super(BaseSlicer, self).__init__()
         self.min_slice_size = min_slice_size
-
         self.detectors = {}
-        self.buffers = {0: numpy.array([], dtype=DTYPE)}
-        self.onsets = {0: []}
-        self.positions = {0: 0}
+        self.buffers = {}
+        self.onsets = {}
+        self.positions = {}
 
     def observe(self, samples, read, position, channel, samplerate, path):
         output = None
@@ -61,50 +56,68 @@ class OnsetSlicer(SliceStream):
         self.samplerate = samplerate
 
         if channel not in self.detectors:
-            self.detectors[channel] = self._detector()
-            self.buffers[channel] = numpy.array([], dtype=DTYPE)
-            self.onsets[channel] = []
-            self.positions[channel] = 0
+            self.add_channel(channel)
 
         self.positions[channel] = position + read
-        self.buffers[channel] = numpy.concatenate(
-            (self.buffers[channel], samples))
+        self.buffers[channel] = numpy.concatenate((self.buffers[channel],
+                                                   samples))
 
         detector = self.detectors[channel]
+
         if detector(samples):
-            position = detector.get_last()
+            position = detector.get_last() * 2
             length = len(self.onsets[channel])
             if length == 0 or (position - self.onsets[channel][0] >
                                self.min_slice_size):
                 self.onsets[channel].append(position)
             if len(self.onsets[channel]) == 2:
-                output = self._flush(channel, self.path, self.samplerate)
+                output = self.flush(channel)
 
         return output
 
     def finish(self):
         for channel in self.onsets:
             self.onsets[channel].append(self.positions[channel])
-            yield self._flush(channel, self.path, self.samplerate)
+            yield self.flush(channel)
 
-    def _detector(self):
-        detector = aubio.onset(self.method, self.winsize, self.hopsize)
-        detector.set_threshold(self.threshold)
-        return detector
+    def get_detector(self):
+        raise NotImplementedError()
 
-    def _flush(self, channel, path, samplerate):
-        segment_length = self.onsets[channel][1] - self.onsets[channel][0]
-        segment = self.buffers[channel][:segment_length]
-        self.buffers[channel] = self.buffers[channel][segment_length:]
+    def add_channel(self, channel):
+        self.detectors[channel] = self.get_detector()
+        self.buffers[channel] = numpy.array([], dtype=DTYPE)
+        self.onsets[channel] = []
+        self.positions[channel] = 0
 
+    def flush(self, channel):
+        duration = self.onsets[channel][1] - self.onsets[channel][0]
+        samples = self.buffers[channel][:duration]
         position = self.onsets[channel][0]
+
+        self.buffers[channel] = self.buffers[channel][duration:]
         self.onsets[channel] = [self.onsets[channel][1]]
 
         return {
-            "samplerate": samplerate,
-            "path": path,
-            "samples": segment,
+            "samplerate": self.samplerate,
+            "path": self.path,
+            "samples": samples,
             "channel": channel,
             "position": position,
-            "duration": segment_length
+            "duration": duration
         }
+
+
+class OnsetSlicer(BaseSlicer):
+
+    def __init__(self, winsize=1024, threshold=-70, method="default",
+                 min_slice_size=8192):
+        super(OnsetSlicer, self).__init__(min_slice_size=min_slice_size)
+        self.winsize = winsize
+        self.hopsize = winsize / 2
+        self.threshold = threshold
+        self.method = method
+
+    def get_detector(self):
+        detector = aubio.onset(self.method, self.winsize, self.hopsize)
+        detector.set_threshold(self.threshold)
+        return detector

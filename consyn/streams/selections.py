@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from sqlalchemy.sql import func
 from .import Stream
 from ..models import Features

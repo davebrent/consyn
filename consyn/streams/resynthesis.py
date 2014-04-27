@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import numpy
 from ..settings import DTYPE
 from .core import Stream

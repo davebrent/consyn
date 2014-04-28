@@ -10,11 +10,8 @@ def add_corpus(session, path, bufsize=settings.BUFSIZE,
                hopsize=settings.HOPSIZE, minsize=settings.BUFSIZE,
                method="default", threshold=0):
 
-    soundfile = streams.Soundfile(bufsize=bufsize, hopsize=hopsize)
-
     results = [streams.Pool({"path": path})] \
-        >> soundfile \
-        >> streams.FrameSampleReader() \
+        >> streams.AubioFrameLoader(bufsize=bufsize, hopsize=hopsize) \
         >> streams.OnsetSlicer(
             winsize=bufsize,
             min_slice_size=minsize,
@@ -25,26 +22,27 @@ def add_corpus(session, path, bufsize=settings.BUFSIZE,
     corpus = models.Corpus(duration=0, channels=1)
 
     for index, result in enumerate(results):
+        frame = result["frame"]
+
         if index == 0:
-            corpus.path = os.path.abspath(result["path"])
-            corpus.samplerate = result["samplerate"]
+            corpus.path = os.path.abspath(frame.path)
+            corpus.samplerate = frame.samplerate
 
-        if result["channel"] == 0:
-            corpus.duration += result["duration"]
+        if frame.channel == 0:
+            corpus.duration += frame.duration
 
-        if result["channel"] + 1 > corpus.channels:
-            corpus.channels = result["channel"] + 1
+        if frame.channel + 1 > corpus.channels:
+            corpus.channels = frame.channel + 1
 
         unit = models.Unit(corpus=corpus,
-                           channel=result["channel"],
-                           position=result["position"],
-                           duration=result["duration"])
+                           channel=frame.channel,
+                           position=frame.position,
+                           duration=frame.duration)
 
         unit.features = models.Features(unit, result["features"])
         session.add(unit)
 
     session.add(corpus)
-    soundfile.close()
     return corpus
 
 

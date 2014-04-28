@@ -1,43 +1,15 @@
 # -*- coding: utf-8 -*-
 import aubio
 import numpy
-import collections
 
+from .base import SliceStream
+from .base import AudioFrame
 from ..settings import DTYPE
-from .core import Stream
-from .core import Pool
 
 
 __all__ = [
     "OnsetSlicer"
 ]
-
-
-class SliceStream(Stream):
-    # Frames must be in order of there position but may be mixed by channel.
-    def __init__(self):
-        super(SliceStream, self).__init__()
-
-    def __call__(self, pipe):
-        for pool in pipe:
-            _slice = self.observe(
-                pool["samples"], pool["samples_read"],
-                pool["position"], pool["channel"],
-                pool["samplerate"], pool["path"])
-            if _slice is None:
-                continue
-            yield Pool(initial=_slice)
-
-        closing = self.finish()
-        if isinstance(closing, collections.Iterable):
-            for _slice in closing:
-                yield Pool(initial=_slice)
-
-    def observe(self, samples, read, position, channel, samplerate, path):
-        raise NotImplementedError("SliceStream must implement this")
-
-    def finish(self, samples, path, channel, samplerate):
-        pass
 
 
 class BaseSlicer(SliceStream):
@@ -50,7 +22,14 @@ class BaseSlicer(SliceStream):
         self.onsets = {}
         self.positions = {}
 
-    def observe(self, samples, read, position, channel, samplerate, path):
+    def observe(self, frame):
+        samples = frame.samples
+        read = frame.duration
+        position = frame.position
+        channel = frame.channel
+        samplerate = frame.samplerate
+        path = frame.path
+
         output = None
         self.path = path
         self.samplerate = samplerate
@@ -97,14 +76,14 @@ class BaseSlicer(SliceStream):
         self.buffers[channel] = self.buffers[channel][duration:]
         self.onsets[channel] = [self.onsets[channel][1]]
 
-        return {
-            "samplerate": self.samplerate,
-            "path": self.path,
-            "samples": samples,
-            "channel": channel,
-            "position": position,
-            "duration": duration
-        }
+        frame = AudioFrame()
+        frame.samplerate = self.samplerate
+        frame.path = self.path
+        frame.samples = samples
+        frame.channel = channel
+        frame.position = position
+        frame.duration = duration
+        return frame
 
 
 class OnsetSlicer(BaseSlicer):

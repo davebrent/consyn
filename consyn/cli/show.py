@@ -33,19 +33,15 @@ def command(session, paths=None, verbose=True, force=False):
 
     corpus = models.Corpus.by_id_or_name(session, args["<input>"])
 
-    soundfile = streams.Soundfile(
-        bufsize=int(args["--framesize"]),
-        hopsize=int(args["--framesize"]),
-        key=lambda state: state["unit"].corpus.path)
-
     results = [streams.Pool({"corpus": corpus})] \
         >> streams.UnitGenerator(session) \
-        >> soundfile \
-        >> streams.UnitSampleReader() \
+        >> streams.AubioUnitLoader(
+            bufsize=int(args["--framesize"]),
+            hopsize=int(args["--framesize"]),
+            key=lambda state: state["unit"].corpus.path) \
         >> streams.CorpusSampleBuilder() \
         >> list
 
-    soundfile.close()
     results = results[0]
 
     duration = float(results["buffer"].shape[1])

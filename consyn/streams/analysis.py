@@ -1,13 +1,11 @@
 # -*- coding: utf-8 -*-
 import aubio
 import numpy
-from .core import Stream
+
+from .base import AnalysisSteam
 
 
-__all__ = [
-    "AnalysisSteam",
-    "SampleAnalyser"
-]
+__all__ = ["SampleAnalyser"]
 
 
 def _slice_array(arr, bufsize=1024, hopsize=512):
@@ -20,20 +18,6 @@ def _slice_array(arr, bufsize=1024, hopsize=512):
         else:
             yield arr[position:position + bufsize]
         position += hopsize
-
-
-class AnalysisSteam(Stream):
-
-    def __init__(self):
-        super(AnalysisSteam, self).__init__()
-
-    def __call__(self, pipe):
-        for pool in pipe:
-            pool["features"] = self.analyse(pool["samples"])
-            yield pool
-
-    def analyse(self, samples):
-        raise NotImplementedError("Analysers must return features")
 
 
 class SampleAnalyser(AnalysisSteam):
@@ -58,7 +42,8 @@ class SampleAnalyser(AnalysisSteam):
         self.coeffs = coeffs
         self.filters = filters
 
-    def analyse(self, samples):
+    def analyse(self, frame):
+        samples = frame.samples
         features = {}
         frames = _slice_array(samples,
                               bufsize=self.winsize,

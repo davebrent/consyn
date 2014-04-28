@@ -1,32 +1,14 @@
 # -*- coding: utf-8 -*-
 import numpy
+
+from .base import ResynthesisStream
 from ..settings import DTYPE
-from .core import Stream
 
 
 __all__ = [
     "DurationClipper",
     "EnvelopeUnits"
 ]
-
-
-class ResynthesisStream(Stream):
-
-    def __init__(self):
-        super(ResynthesisStream, self).__init__()
-
-    def __call__(self, pipe):
-        for pool in pipe:
-            samples, unit = self.process(
-                pool["samples"],
-                pool["unit"],
-                pool["target"])
-            pool["unit"] = unit
-            pool["samples"] = samples
-            yield pool
-
-    def process(self, samples, unit, target):
-        raise NotImplementedError("Resynthesisers must implement this")
 
 
 class DurationClipper(ResynthesisStream):

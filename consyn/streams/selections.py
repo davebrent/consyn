@@ -1,35 +1,17 @@
 # -*- coding: utf-8 -*-
 from sqlalchemy.sql import func
-from .import Stream
+
+from .base import SelectionStream
 from ..models import Features
 from ..settings import FEATURE_SLOTS
 
 
 __all__ = [
-    "UnitSelectionStream",
     "ManhattenDistanceSelection",
 ]
 
 
-class UnitSelectionStream(Stream):
-
-    def __init__(self, session, corpi):
-        super(UnitSelectionStream, self).__init__()
-        self.corpi = [corpus.id for corpus in corpi]
-        self.session = session
-
-    def __call__(self, pipe):
-        for pool in pipe:
-            unit = self.select(pool["unit"])
-            pool["target"] = pool["unit"]
-            pool["unit"] = unit
-            yield pool
-
-    def select(self, unit):
-        raise NotImplementedError("UnitSelectionStream must implement this")
-
-
-class ManhattenDistanceSelection(UnitSelectionStream):
+class ManhattenDistanceSelection(SelectionStream):
 
     def select(self, unit):
         target_features = unit.features

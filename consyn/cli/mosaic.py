@@ -20,7 +20,7 @@ from .. import commands
 class ProgressBar(object):
 
     def __init__(self, size):
-        self.progress_bar = progress.bar(range(size))
+        self.progress_bar = progress.bar(range(size - 1))
 
     def __call__(self, pipe):
         for pool in pipe:
@@ -29,23 +29,19 @@ class ProgressBar(object):
 
 
 def cmd_mosaic(session, outfile, target, corpi):
-    soundfile = streams.Soundfile(
-        bufsize=2048,
-        hopsize=2048,
-        key=lambda state: state["unit"].corpus.path)
-
     [streams.Pool({"corpus": target.path, "out": outfile})] \
         >> streams.UnitGenerator(session) \
         >> streams.ManhattenDistanceSelection(session, corpi) \
-        >> soundfile \
-        >> streams.UnitSampleReader() \
+        >> streams.AubioUnitLoader(
+            bufsize=2048,
+            hopsize=2048,
+            key=lambda state: state["unit"].corpus.path) \
         >> streams.DurationClipper() \
         >> ProgressBar(len(target.units)) \
         >> streams.CorpusSampleBuilder(unit_key="target") \
         >> streams.CorpusWriter() \
         >> list
 
-    soundfile.close()
     return True
 
 

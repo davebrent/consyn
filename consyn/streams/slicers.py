@@ -2,14 +2,27 @@
 import aubio
 import numpy
 
-from .base import SliceStream
 from .base import AudioFrame
+from .base import SliceStream
+from .base import StreamFactory
 from ..settings import DTYPE
 
 
 __all__ = [
-    "OnsetSlicer"
+    "OnsetSlicer",
+    "RegularSlicer",
+    "SlicerFactory"
 ]
+
+
+class SliceBuffer(object):
+
+    def __init__(self, channel, detector):
+        self.channel = channel
+        self.detector = detector
+        self.buffer = numpy.array([], dtype=DTYPE)
+        self.onsets = []
+        self.position = 0
 
 
 class BaseSlicer(SliceStream):
@@ -17,70 +30,59 @@ class BaseSlicer(SliceStream):
     def __init__(self, min_slice_size=8192):
         super(BaseSlicer, self).__init__()
         self.min_slice_size = min_slice_size
-        self.detectors = {}
-        self.buffers = {}
-        self.onsets = {}
-        self.positions = {}
+        self.channels = {}
 
     def observe(self, frame):
-        samples = frame.samples
-        read = frame.duration
-        position = frame.position
-        channel = frame.channel
-        samplerate = frame.samplerate
-        path = frame.path
-
         output = None
-        self.path = path
-        self.samplerate = samplerate
+        self.path = frame.path
+        self.samplerate = frame.samplerate
 
-        if channel not in self.detectors:
-            self.add_channel(channel)
+        if frame.channel not in self.channels:
+            self.channels[frame.channel] = SliceBuffer(
+                frame.channel, self.get_detector())
 
-        self.positions[channel] = position + read
-        self.buffers[channel] = numpy.concatenate((self.buffers[channel],
-                                                   samples))
+        _slice = self.channels[frame.channel]
+        _slice.position = frame.position + frame.duration
+        _slice.buffer = numpy.concatenate((_slice.buffer, frame.samples))
 
-        detector = self.detectors[channel]
-
-        if detector(samples):
-            position = detector.get_last() * 2
-            length = len(self.onsets[channel])
-            if length == 0 or (position - self.onsets[channel][0] >
+        if _slice.detector(frame.samples):
+            position = self.get_onset_position(_slice)
+            length = len(_slice.onsets)
+            if length == 0 or (position - _slice.onsets[0] >
                                self.min_slice_size):
-                self.onsets[channel].append(position)
-            if len(self.onsets[channel]) == 2:
-                output = self.flush(channel)
+                _slice.onsets.append(position)
+            if len(_slice.onsets) == 2:
+                output = self.flush(_slice)
 
         return output
 
     def finish(self):
-        for channel in self.onsets:
-            self.onsets[channel].append(self.positions[channel])
-            yield self.flush(channel)
+        for channel in self.channels:
+            _slice = self.channels[channel]
+            _slice.onsets.append(_slice.position)
+            frame = self.flush(_slice)
+            if frame.duration > 0:
+                yield frame
 
     def get_detector(self):
         raise NotImplementedError()
 
-    def add_channel(self, channel):
-        self.detectors[channel] = self.get_detector()
-        self.buffers[channel] = numpy.array([], dtype=DTYPE)
-        self.onsets[channel] = []
-        self.positions[channel] = 0
+    def get_onset_position(self, _slice):
+        raise NotImplementedError()
 
-    def flush(self, channel):
-        duration = self.onsets[channel][1] - self.onsets[channel][0]
-        samples = self.buffers[channel][:duration]
-        position = self.onsets[channel][0]
+    def flush(self, _slice):
+        duration = _slice.onsets[1] - _slice.onsets[0]
+        samples = _slice.buffer[:duration]
+        position = _slice.onsets[0]
 
-        self.buffers[channel] = self.buffers[channel][duration:]
-        self.onsets[channel] = [self.onsets[channel][1]]
+        _slice.buffer = _slice.buffer[duration:]
+        _slice.onsets = [_slice.onsets[1]]
 
         frame = AudioFrame()
         frame.samplerate = self.samplerate
         frame.path = self.path
         frame.samples = samples
-        frame.channel = channel
+        frame.channel = _slice.channel
         frame.position = position
         frame.duration = duration
         return frame
@@ -100,3 +102,48 @@ class OnsetSlicer(BaseSlicer):
         detector = aubio.onset(self.method, self.winsize, self.hopsize)
         detector.set_threshold(self.threshold)
         return detector
+
+    def get_onset_position(self, _slice):
+        return _slice.detector.get_last() * 2
+
+
+class RegularDetector(object):
+
+    def __init__(self, size):
+        self.size = size
+        self.position = 0
+        self.count = 0
+        self.started = True
+
+    def __call__(self, samples):
+        self.position += samples.shape[0]
+        if self.position >= self.size or self.started is True:
+            self.started = False
+            return True
+        return False
+
+    def get_last(self):
+        position = self.size * self.count
+        self.count += 1
+        self.position = 0
+        return position
+
+
+class RegularSlicer(BaseSlicer):
+
+    def __init__(self, winsize=1024):
+        super(RegularSlicer, self).__init__(min_slice_size=0)
+        self.winsize = winsize
+
+    def get_detector(self):
+        return RegularDetector(self.winsize)
+
+    def get_onset_position(self, _slice):
+        return _slice.detector.get_last()
+
+
+class SlicerFactory(StreamFactory):
+    objects = {
+        "regular": RegularSlicer,
+        "onsets": OnsetSlicer
+    }

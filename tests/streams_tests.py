@@ -62,6 +62,33 @@ class OnsetSlicerTest(unittest.TestCase):
         self._onset_test("amen-mono.wav", 1, 10, 70560)
 
 
+class RegularSlicerTest(unittest.TestCase):
+
+    def test_simple_slices(self):
+        path = os.path.join(SOUND_DIR, "amen-mono.wav")
+
+        results = [streams.Pool(initial={"path": path})] \
+            >> streams.AubioFrameLoader(bufsize=1024, hopsize=1024) \
+            >> streams.RegularSlicer(winsize=2048) \
+            >> list
+
+        self.assertEqual(len(results), math.ceil(70560.0 / 2048.0))
+        positions = [pool["frame"].position for pool in results]
+        self.assertEqual(positions, [
+            0, 2048, 4096, 6144, 8192, 10240, 12288, 14336, 16384, 18432,
+            20480, 22528, 24576, 26624, 28672, 30720, 32768, 34816, 36864,
+            38912, 40960, 43008, 45056, 47104, 49152, 51200, 53248, 55296,
+            57344, 59392, 61440, 63488, 65536, 67584, 69632
+        ])
+
+
+class SlicerFactoryTest(unittest.TestCase):
+
+    def test_factory(self):
+        slicer = streams.SlicerFactory("regular", winsize=2048)
+        self.assertEqual(isinstance(slicer, streams.RegularSlicer), True)
+
+
 class SampleAnalyserTest(unittest.TestCase):
 
     def test_same_buffersize(self):
@@ -196,3 +223,38 @@ class DurationClipperTests(unittest.TestCase):
 
     def test_equal(self):
         self._test_simple(numpy.arange(20), 20, 2, 20, 2)
+
+
+class SlicerFactoryTests(unittest.TestCase):
+
+    def test_no_kargs(self):
+        slicer = streams.SlicerFactory("onsets")
+        self.assertTrue(isinstance(slicer, streams.OnsetSlicer))
+
+        slicer = streams.SlicerFactory("regular")
+        self.assertTrue(isinstance(slicer, streams.RegularSlicer))
+
+    def test_kwargs(self):
+        slicer = streams.SlicerFactory("regular", winsize=9999)
+        self.assertTrue(isinstance(slicer, streams.RegularSlicer))
+        self.assertEqual(slicer.winsize, 9999)
+
+        slicer = streams.SlicerFactory("onsets", winsize=9999, threshold=0,
+                                       method="energy", min_slice_size=0)
+        self.assertTrue(isinstance(slicer, streams.OnsetSlicer))
+        self.assertEqual(slicer.winsize, 9999)
+        self.assertEqual(slicer.threshold, 0)
+        self.assertEqual(slicer.method, "energy")
+        self.assertEqual(slicer.min_slice_size, 0)
+
+    def test_wrong_kwargs(self):
+        slicer = streams.SlicerFactory("regular", foobar=9999)
+        self.assertTrue(isinstance(slicer, streams.RegularSlicer))
+
+    def test_wrong_name(self):
+        error = False
+        try:
+            error = streams.SlicerFactory("foobar", foobar=9999)
+        except:
+            error = True
+        self.assertTrue(error)

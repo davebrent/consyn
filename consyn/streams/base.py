@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import inspect
 import collections
 
 
@@ -6,6 +7,7 @@ __all__ = [
     "AudioFrame",
     "Stream",
     "Pool",
+    "StreamFactory",
     "FrameLoaderStream",
     "UnitLoaderStream",
     "SliceStream",
@@ -28,6 +30,11 @@ class AudioFrame(object):
 
     def __len__(self):
         return self.size
+
+    def __repr__(self):
+        keys = ['position', 'duration', 'channel', 'samplerate']
+        values = ["{}={}".format(key, getattr(self, key)) for key in keys]
+        return "<AudioFrame({})>".format(", ".join(values))
 
 
 class Stream(object):
@@ -81,6 +88,18 @@ class Pool(object):
 
     def __str__(self):
         return self.values.__str__()
+
+
+class StreamFactory(object):
+
+    def __new__(cls, name, **kwargs):
+        if name not in cls.objects:
+            raise Exception
+        Class = cls.objects[name]
+        args, _, _, defaults = inspect.getargspec(Class.__init__)
+        args = args[-len(defaults):]
+        kwargs = {key: kwargs[key] for key in args if key in kwargs}
+        return Class(**kwargs)
 
 
 class FrameLoaderStream(Stream):

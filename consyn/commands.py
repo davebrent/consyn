@@ -12,7 +12,8 @@ def add_corpus(session, path, bufsize=settings.BUFSIZE,
 
     results = [streams.Pool({"path": path})] \
         >> streams.AubioFrameLoader(bufsize=bufsize, hopsize=hopsize) \
-        >> streams.OnsetSlicer(
+        >> streams.SlicerFactory(
+            "onsets",
             winsize=bufsize,
             min_slice_size=minsize,
             method=method,

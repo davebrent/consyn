@@ -11,6 +11,7 @@ from ..settings import DTYPE
 __all__ = [
     "OnsetSlicer",
     "RegularSlicer",
+    "BeatSlicer",
     "SlicerFactory"
 ]
 
@@ -30,6 +31,7 @@ class BaseSlicer(SliceStream):
     def __init__(self, min_slice_size=8192):
         super(BaseSlicer, self).__init__()
         self.min_slice_size = min_slice_size
+        self.samplerate = None
         self.channels = {}
 
     def observe(self, frame):
@@ -142,8 +144,37 @@ class RegularSlicer(BaseSlicer):
         return _slice.detector.get_last()
 
 
+class BeatSlicer(BaseSlicer):
+
+    def __init__(self, bpm=120, interval="1/16"):
+        super(BeatSlicer, self).__init__(min_slice_size=0)
+        self.bpm = bpm
+        self.interval = interval
+
+    def get_detector(self):
+        assert getattr(self, "samplerate") is not None
+        winsize = self.get_winsize(self.bpm, self.interval, self.samplerate)
+        return RegularDetector(winsize)
+
+    def get_winsize(self, bpm, interval, samplerate):
+        if "/" in interval:
+            interval = interval.split("/")
+            assert len(interval) == 2
+            interval = map(float, interval)
+            interval = interval[0] / interval[1]
+        else:
+            interval = float(interval)
+
+        seconds = ((float(60) / float(bpm)) * 4) * interval
+        return int(round(seconds * samplerate))
+
+    def get_onset_position(self, _slice):
+        return _slice.detector.get_last()
+
+
 class SlicerFactory(StreamFactory):
     objects = {
         "regular": RegularSlicer,
-        "onsets": OnsetSlicer
+        "onsets": OnsetSlicer,
+        "beats": BeatSlicer
     }

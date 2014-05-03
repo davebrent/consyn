@@ -4,9 +4,9 @@ import unittest
 
 import numpy
 
-from consyn import streams
-from consyn import models
 from consyn import commands
+from consyn import models
+from consyn import streams
 
 from . import SOUND_DIR
 from . import DummySession
@@ -82,11 +82,37 @@ class RegularSlicerTest(unittest.TestCase):
         ])
 
 
-class SlicerFactoryTest(unittest.TestCase):
+class BeatSlicerTest(unittest.TestCase):
 
-    def test_factory(self):
-        slicer = streams.SlicerFactory("regular", winsize=2048)
-        self.assertEqual(isinstance(slicer, streams.RegularSlicer), True)
+    def test_get_winsize(self):
+        slicer = streams.BeatSlicer()
+        winsize = slicer.get_winsize(120, "1/16", 44100)
+        self.assertEqual(winsize, 5513)
+        self.assertTrue(True)
+
+    def test_no_samplerate(self):
+        slicer = streams.BeatSlicer(bpm=120)
+        error = False
+        try:
+            error = slicer.get_detector()
+        except AssertionError:
+            error = True
+        self.assertTrue(error)
+
+    @unittest.expectedFailure
+    def test_slice(self):
+        path = os.path.join(SOUND_DIR, "amen-mono.wav")
+
+        results = [streams.Pool(initial={"path": path})] \
+            >> streams.AubioFrameLoader(bufsize=1024, hopsize=1024) \
+            >> streams.BeatSlicer(bpm=150, interval="1/16") \
+            >> list
+
+        positions = [pool["frame"].position for pool in results]
+        self.assertEqual(positions, [
+            0, 4410, 8820, 13230, 17640, 22050, 26460, 30870, 35280, 39690,
+            44100, 48510, 52920, 57330, 61740, 66150
+        ])
 
 
 class SampleAnalyserTest(unittest.TestCase):
@@ -234,6 +260,9 @@ class SlicerFactoryTests(unittest.TestCase):
         slicer = streams.SlicerFactory("regular")
         self.assertTrue(isinstance(slicer, streams.RegularSlicer))
 
+        slicer = streams.SlicerFactory("beats")
+        self.assertTrue(isinstance(slicer, streams.BeatSlicer))
+
     def test_kwargs(self):
         slicer = streams.SlicerFactory("regular", winsize=9999)
         self.assertTrue(isinstance(slicer, streams.RegularSlicer))
@@ -246,6 +275,10 @@ class SlicerFactoryTests(unittest.TestCase):
         self.assertEqual(slicer.threshold, 0)
         self.assertEqual(slicer.method, "energy")
         self.assertEqual(slicer.min_slice_size, 0)
+
+        slicer = streams.SlicerFactory("beats", bpm=90, interval="1/16")
+        self.assertEqual(slicer.bpm, 90)
+        self.assertEqual(slicer.interval, "1/16")
 
     def test_wrong_kwargs(self):
         slicer = streams.SlicerFactory("regular", foobar=9999)

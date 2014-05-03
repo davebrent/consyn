@@ -29,7 +29,7 @@ class AudioFrame(object):
         self.duration = duration
 
     def __len__(self):
-        return self.size
+        return self.duration
 
     def __repr__(self):
         keys = ['position', 'duration', 'channel', 'samplerate']

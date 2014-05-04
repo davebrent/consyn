@@ -17,7 +17,10 @@ import os
 
 from docopt import docopt
 from clint.textui import colored
+from clint.textui import indent
+from clint.textui import progress
 from clint.textui import puts
+from sqlalchemy.exc import ProgrammingError
 
 from .. import models
 from .. import commands
@@ -27,33 +30,68 @@ def command(session):
     args = docopt(__doc__)
     paths = args["<input>"]
 
-    for path in set(paths):
-        path = os.path.abspath(path)
+    progress_bar = progress.bar(range(len(paths)))
+    failures = []
+    succeses = []
 
-        if not os.path.isfile(path):
-            if args["--verbose"]:
-                puts(colored.red(
-                    "Skipping {}, file does not exist".format(path)))
-            continue
+    try:
+        for path in set(paths):
+            path = os.path.abspath(path)
 
-        exists = models.Corpus.by_id_or_name(session, path)
-        if exists:
-            if args["--force"]:
-                commands.remove_corpus(session, exists)
-            else:
-                if args["--verbose"]:
-                    puts(colored.red(
-                        "Skipping {}, file already added. Use -f to overwrite"
-                        .format(exists.name)))
+            if not os.path.isfile(path):
+                failures.append("File does not exist {}".format(path))
+                progress_bar.next()
                 continue
 
-        corpus = commands.add_corpus(
-            session, path,
-            bufsize=int(args["--bufsize"]),
-            hopsize=int(args["--hopsize"]),
-            minsize=int(args["--minsize"]),
-            method=args["--onset-method"],
-            threshold=int(args["--onset-threshold"]))
+            try:
+                exists = models.Corpus.by_id_or_name(session, path)
+            except ProgrammingError:
+                # FIXME:
+                failures.append("Unicode error {}".format(path))
+                progress_bar.next()
+                continue
 
-        session.commit()
-        puts(colored.green("Successfully added {}".format(corpus.name)))
+            if exists:
+                if args["--force"]:
+                    commands.remove_corpus(session, exists)
+                else:
+                    failures.append("File has already been added".format(path))
+                    progress_bar.next()
+                    continue
+
+            commands.add_corpus(
+                session, path,
+                bufsize=int(args["--bufsize"]),
+                hopsize=int(args["--hopsize"]),
+                minsize=int(args["--minsize"]),
+                method=args["--onset-method"],
+                threshold=int(args["--onset-threshold"]))
+            session.commit()
+            succeses.append(path)
+            progress_bar.next()
+
+        try:
+            progress_bar.next()
+        except StopIteration:
+            pass
+    except:
+        # TODO: Log errors,
+        pass
+    finally:
+        print("")
+
+        if len(succeses) > 0:
+            puts(colored.green("Successfully added {} files".format(
+                len(succeses))))
+            if args["--verbose"]:
+                with indent(2):
+                    for path in succeses:
+                        puts(colored.green(path))
+
+        if len(failures) > 0:
+            puts(colored.red("Failed to add {} files".format(
+                len(failures))))
+            if args["--verbose"]:
+                with indent(2):
+                    for path in succeses:
+                        puts(colored.red(path))

@@ -1,14 +1,50 @@
 # -*- coding: utf-8 -*-
+import logging
 import os
+import time
 
 from . import settings
 from . import streams
 from . import models
 
 
+__all__ = [
+    "add_corpus",
+    "get_corpus",
+    "remove_corpus"
+]
+
+
+logger = logging.getLogger(__name__)
+
+
+def command(fn):
+    def wrapped(*args, **kwargs):
+        start = time.time()
+        logger.debug("{} started args={}, kwargs={}".format(
+            fn.__name__, args, kwargs))
+        result = fn(*args, **kwargs)
+        end = time.time()
+        logger.debug("{} completed in {} secs".format(
+            fn.__name__, end - start))
+        return result
+    return wrapped
+
+
+@command
 def add_corpus(session, path, bufsize=settings.BUFSIZE,
                hopsize=settings.HOPSIZE, minsize=settings.BUFSIZE,
                method="default", threshold=0):
+    """Add a soundfile to the database.
+
+    session     -- Database session
+    path        -- Path to the audiofile, can be relative or absolute.
+    bufsize     -- Buffersize to use for reading and analysis.
+    hopsize     -- Hop size to use for analysis.
+    minsize     -- Minimum size of a unit.
+    method      -- The method to use for onset detection
+    threshold   -- The threshold to use for onset detection
+    """
 
     results = [streams.Pool({"path": path})] \
         >> streams.AubioFrameLoader(bufsize=bufsize, hopsize=hopsize) \
@@ -47,14 +83,29 @@ def add_corpus(session, path, bufsize=settings.BUFSIZE,
     return corpus
 
 
-def get_or_add_corpus(session, parameter):
+@command
+def get_corpus(session, parameter):
+    """Retrieve a corpus, adding it with default settings, if it has not been
+    seen before.
+
+    session     -- Database session
+    parameter   -- A corpus ID or a filepath
+    """
+
     corpus = models.Corpus.by_id_or_name(session, parameter)
     if not corpus:
         corpus = add_corpus(session, parameter)
     return corpus
 
 
+@command
 def remove_corpus(session, corpus):
+    """Remove a corpus and all records related to it.
+
+    session     -- Database session
+    corpus      -- A corpus object, ID or a filepath
+    """
+
     if not isinstance(corpus, models.Corpus):
         corpus = models.Corpus.by_id_or_name(session, corpus)
 

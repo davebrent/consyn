@@ -57,15 +57,13 @@ class CorpusSampleBuilder(Stream):
                     dtype=DTYPE)
 
             buff = self.buffers[corpus.path]
-
             buff[target.channel][
                 target.position:target.position + target.duration] = samples
             self.counts[corpus.path] += 1
 
-            if self.counts[corpus.path] == len(corpus.units) and \
+            if self.counts[corpus.path] == (len(corpus.units) - 1) and \
                     corpus.path not in self.end:
                 self.end[corpus.path] = True
-
                 new_pool = Pool(initial={
                     "corpus": pool["corpus"],
                     "buffer": buff

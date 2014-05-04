@@ -239,7 +239,7 @@ class DurationClipperTests(unittest.TestCase):
         results = [pool] >> streams.DurationClipper() >> list
 
         self.assertEqual(len(results), 1)
-        self.assertEqual(results[0]["samples"].shape[0], target_dur)
+        self.assertEqual(results[0]["frame"].samples.shape[0], target_dur)
 
     def test_less_than(self):
         self._test_simple(numpy.arange(18), 18, 3, 20, 2)

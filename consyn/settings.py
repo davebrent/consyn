@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
+import logging
+import logging.config
 
 from sqlalchemy import Float
 
@@ -12,3 +14,5 @@ FEATURE_TYPE = Float
 DATABASE_PATH = os.path.join(ROOT_DIR, "consyn.sqlite")
 DATABASE_URL = "sqlite:///{}".format(DATABASE_PATH)
 DTYPE = "float32"
+
+logging.config.fileConfig(os.path.join(ROOT_DIR, "development.ini"))

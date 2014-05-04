@@ -192,8 +192,11 @@ class ResynthesisStream(Stream):
                 pool["frame"].samples,
                 pool["unit"],
                 pool["target"])
+
+            frame = AudioFrame()
+            frame.samples = samples
             pool["unit"] = unit
-            pool["samples"] = samples
+            pool["frame"] = frame
             yield pool
 
     def process(self, samples, unit, target):

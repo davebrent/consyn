@@ -1,5 +1,7 @@
-import numpy
+import logging
+
 import aubio
+import numpy
 
 from .base import AudioFrame
 from .base import FrameLoaderStream
@@ -11,6 +13,9 @@ __all__ = [
     "AubioFrameLoader",
     "AubioUnitLoader"
 ]
+
+
+logger = logging.getLogger(__name__)
 
 
 class AubioFrameLoader(FrameLoaderStream):
@@ -46,6 +51,8 @@ class AubioFrameLoader(FrameLoaderStream):
                 break
 
         soundfile.close()
+        del soundfile
+        logger.debug("Closing soundfile for {}".format(path))
 
 
 class AubioUnitLoader(UnitLoaderStream):
@@ -78,4 +85,8 @@ class AubioUnitLoader(UnitLoaderStream):
         frame.duration = unit.duration
         frame.index = 0
         frame.path = path
+
+        soundfile.close()
+        del soundfile
+        logger.debug("Closing soundfile for {}".format(path))
         yield frame

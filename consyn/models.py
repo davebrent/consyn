@@ -18,6 +18,14 @@ Base = declarative_base()
 
 
 class Corpus(Base):
+    """
+    id          -- Unique ID.
+    path        -- Absolute path to the file.
+    channels    -- The number of audio channels in the file.
+    samplerate  -- The samplerate of the audio file.
+    duration    -- Duration of the file in samples
+    """
+
     __tablename__ = "corpi"
     id = Column(Integer, primary_key=True)
     path = Column(UnicodeText(255), nullable=False, unique=True, index=True)
@@ -56,6 +64,13 @@ class Corpus(Base):
 
 
 class Unit(Base):
+    """
+    corpus      -- The corpus that this unit is related to.
+    channel     -- The channel that the unit belongs to in the corpus
+    position    -- The sample position that the unit belongs to in the channel
+    duration    -- Duration in samples
+    """
+
     __tablename__ = "units"
     id = Column(Integer, primary_key=True)
     corpus_id = Column(Integer, ForeignKey("corpi.id"))
@@ -75,6 +90,14 @@ class Unit(Base):
 
 
 class Features(Base):
+    """
+    id          -- Unique identifier for the set of features.
+    unit        -- The unit the set of features describes.
+    corpus      -- The corpus the set of features is part of.
+    feat_*      -- The value of the feature.
+    label_*     -- The human readable name of the feature.
+    """
+
     __table__ = Table(
         "features", Base.metadata,
         Column("id", Integer, primary_key=True),

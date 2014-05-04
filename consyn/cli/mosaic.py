@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Create an audio mosaic
 
-usage: consyn mosaic <outfile> <target> <corpi>... [options]
+usage: consyn mosaic <outfile> <target> [<corpi>...] [options]
 
 options:
    -f, --force              Overwrite file(s) if already exists.
@@ -12,9 +12,11 @@ import docopt
 from clint.textui import colored
 from clint.textui import puts
 from clint.textui import progress
+from sqlalchemy import not_
 
 from .. import streams
 from .. import commands
+from .. import models
 
 
 class ProgressBar(object):
@@ -51,9 +53,13 @@ def command(session, verbose=True, force=False):
     if os.path.isfile(args["<outfile>"]) and not args["--force"]:
         puts(colored.red("File already exists"))
     else:
-        target = commands.get_or_add_corpus(session, args["<target>"])
-        corpi = [commands.get_or_add_corpus(session, corpus)
+        target = commands.get_corpus(session, args["<target>"])
+        corpi = [commands.get_corpus(session, corpus)
                  for corpus in args["<corpi>"]]
-
         session.commit()
+
+        if len(corpi) == 0:
+            corpi = session.query(models.Corpus).filter(not_(
+                models.Corpus.id == target.id)).all()
+
         cmd_mosaic(session, args["<outfile>"], target, corpi)

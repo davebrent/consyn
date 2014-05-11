@@ -68,7 +68,7 @@ class MediaFileSampleBuilder(Stream):
                     "buffer": buff
                 }
 
-                if pool.values.get("out"):
+                if pool.get("out"):
                     new_pool["out"] = pool["out"]
 
                 yield new_pool

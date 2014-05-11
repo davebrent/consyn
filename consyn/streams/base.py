@@ -17,15 +17,19 @@ __all__ = [
 
 
 class AudioFrame(object):
+    __slots__ = [
+        "samples",
+        "samplerate",
+        "position",
+        "channel",
+        "index",
+        "path",
+        "duration"
+    ]
 
-    def __init__(self, samples=None, samplerate=None, position=None, channel=0,
-                 index=None, path=None, duration=None):
-        self.samplerate = samplerate
-        self.position = position
-        self.channel = channel
-        self.samples = samples
-        self.path = path
-        self.duration = duration
+    def __init__(self, *args, **kwargs):
+        for key in kwargs:
+            setattr(self, key, kwargs[key])
 
     def __len__(self):
         return self.duration

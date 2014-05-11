@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Create an audio mosaic
 
-usage: consyn mosaic <outfile> <target> [<corpi>...] [options]
+usage: consyn mosaic <outfile> <target> [<mediafiles>...] [options]
 
 options:
    -f, --force              Overwrite file(s) if already exists.
@@ -30,18 +30,18 @@ class ProgressBar(object):
             yield pool
 
 
-def cmd_mosaic(session, outfile, target, corpi):
-    [streams.Pool({"corpus": target.path, "out": outfile})] \
+def cmd_mosaic(session, outfile, target, mediafiles):
+    [streams.Pool({"mediafile": target.path, "out": outfile})] \
         >> streams.UnitGenerator(session) \
-        >> streams.ManhattenDistanceSelection(session, corpi) \
+        >> streams.ManhattenDistanceSelection(session, mediafiles) \
         >> streams.AubioUnitLoader(
             bufsize=2048,
             hopsize=2048,
-            key=lambda state: state["unit"].corpus.path) \
+            key=lambda state: state["unit"].mediafile.path) \
         >> streams.DurationClipper() \
         >> ProgressBar(len(target.units)) \
-        >> streams.CorpusSampleBuilder(unit_key="target") \
-        >> streams.CorpusWriter() \
+        >> streams.MediaFileSampleBuilder(unit_key="target") \
+        >> streams.MediaFileWriter() \
         >> list
 
     return True
@@ -53,13 +53,13 @@ def command(session, verbose=True, force=False):
     if os.path.isfile(args["<outfile>"]) and not args["--force"]:
         puts(colored.red("File already exists"))
     else:
-        target = commands.get_corpus(session, args["<target>"])
-        corpi = [commands.get_corpus(session, corpus)
-                 for corpus in args["<corpi>"]]
+        target = commands.get_mediafile(session, args["<target>"])
+        mediafiles = [commands.get_mediafile(session, mediafile)
+                      for mediafile in args["<mediafiles>"]]
         session.commit()
 
-        if len(corpi) == 0:
-            corpi = session.query(models.Corpus).filter(not_(
-                models.Corpus.id == target.id)).all()
+        if len(mediafiles) == 0:
+            mediafiles = session.query(models.MediaFile).filter(not_(
+                models.MediaFile.id == target.id)).all()
 
-        cmd_mosaic(session, args["<outfile>"], target, corpi)
+        cmd_mosaic(session, args["<outfile>"], target, mediafiles)

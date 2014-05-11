@@ -31,24 +31,24 @@ def samps_to_secs(samples, samplerate):
 def command(session, paths=None, verbose=True, force=False):
     args = docopt.docopt(__doc__)
 
-    corpus = models.Corpus.by_id_or_name(session, args["<input>"])
+    mediafile = models.MediaFile.by_id_or_name(session, args["<input>"])
 
-    results = [streams.Pool({"corpus": corpus})] \
+    results = [streams.Pool({"mediafile": mediafile})] \
         >> streams.UnitGenerator(session) \
         >> streams.AubioUnitLoader(
             bufsize=int(args["--framesize"]),
             hopsize=int(args["--framesize"]),
-            key=lambda state: state["unit"].corpus.path) \
-        >> streams.CorpusSampleBuilder() \
+            key=lambda state: state["unit"].mediafile.path) \
+        >> streams.MediaFileSampleBuilder() \
         >> list
 
     results = results[0]
 
     duration = float(results["buffer"].shape[1])
-    time = numpy.linspace(0, samps_to_secs(duration, corpus.samplerate),
+    time = numpy.linspace(0, samps_to_secs(duration, mediafile.samplerate),
                           num=duration)
 
-    figure, axes = plt.subplots(corpus.channels, sharex=True, sharey=True)
+    figure, axes = plt.subplots(mediafile.channels, sharex=True, sharey=True)
 
     if not isinstance(axes, collections.Iterable):
         axes = [axes]
@@ -69,8 +69,8 @@ def command(session, paths=None, verbose=True, force=False):
 
         ax.plot(time, results["buffer"][index], color=WAVE_COLOR)
 
-        for unit in corpus.units:
-            position = samps_to_secs(unit.position, corpus.samplerate)
+        for unit in mediafile.units:
+            position = samps_to_secs(unit.position, mediafile.samplerate)
             position = position if position != 0 else 0.003
 
             if unit.channel == index:
@@ -79,6 +79,6 @@ def command(session, paths=None, verbose=True, force=False):
     figure.patch.set_facecolor(FIGURE_COLOR)
 
     figure.set_tight_layout(True)
-    plt.xlim([0, samps_to_secs(duration, corpus.samplerate)])
+    plt.xlim([0, samps_to_secs(duration, mediafile.samplerate)])
     plt.ylim([-1, 1])
     plt.show()

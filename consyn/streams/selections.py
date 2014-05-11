@@ -24,7 +24,7 @@ class ManhattenDistanceSelection(SelectionStream):
                                   getattr(target_features, col_name))
 
         feature = self.session.query(Features) \
-            .filter(Features.corpus_id.in_(self.corpi)) \
+            .filter(Features.mediafile_id.in_(self.mediafiles)) \
             .order_by(dist_func).limit(1).one()
 
         return feature.unit

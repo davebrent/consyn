@@ -9,9 +9,9 @@ from . import models
 
 
 __all__ = [
-    "add_corpus",
-    "get_corpus",
-    "remove_corpus"
+    "add_mediafile",
+    "get_mediafile",
+    "remove_mediafile"
 ]
 
 
@@ -32,10 +32,10 @@ def command(fn):
 
 
 @command
-def add_corpus(session, path, bufsize=settings.BUFSIZE,
-               hopsize=settings.HOPSIZE, minsize=settings.BUFSIZE,
-               method="default", threshold=0):
-    """Add a soundfile to the database.
+def add_mediafile(session, path, bufsize=settings.BUFSIZE,
+                  hopsize=settings.HOPSIZE, minsize=settings.BUFSIZE,
+                  method="default", threshold=0):
+    """Add a mediafile to the database.
 
     session     -- Database session
     path        -- Path to the audiofile, can be relative or absolute.
@@ -56,22 +56,22 @@ def add_corpus(session, path, bufsize=settings.BUFSIZE,
             threshold=threshold) \
         >> streams.SampleAnalyser(winsize=bufsize, hopsize=hopsize)
 
-    corpus = models.Corpus(duration=0, channels=1)
+    mediafile = models.MediaFile(duration=0, channels=1)
 
     for index, result in enumerate(results):
         frame = result["frame"]
 
         if index == 0:
-            corpus.path = os.path.abspath(frame.path)
-            corpus.samplerate = frame.samplerate
+            mediafile.path = os.path.abspath(frame.path)
+            mediafile.samplerate = frame.samplerate
 
         if frame.channel == 0:
-            corpus.duration += frame.duration
+            mediafile.duration += frame.duration
 
-        if frame.channel + 1 > corpus.channels:
-            corpus.channels = frame.channel + 1
+        if frame.channel + 1 > mediafile.channels:
+            mediafile.channels = frame.channel + 1
 
-        unit = models.Unit(corpus=corpus,
+        unit = models.Unit(mediafile=mediafile,
                            channel=frame.channel,
                            position=frame.position,
                            duration=frame.duration)
@@ -79,41 +79,41 @@ def add_corpus(session, path, bufsize=settings.BUFSIZE,
         unit.features = models.Features(unit, result["features"])
         session.add(unit)
 
-    session.add(corpus)
-    return corpus
+    session.add(mediafile)
+    return mediafile
 
 
 @command
-def get_corpus(session, parameter):
-    """Retrieve a corpus, adding it with default settings, if it has not been
-    seen before.
+def get_mediafile(session, parameter):
+    """Retrieve a mediafile, adding it with default settings, if it has not
+    been seen before.
 
     session     -- Database session
-    parameter   -- A corpus ID or a filepath
+    parameter   -- A mediafile ID or a filepath
     """
 
-    corpus = models.Corpus.by_id_or_name(session, parameter)
-    if not corpus:
-        corpus = add_corpus(session, parameter)
-    return corpus
+    mediafile = models.MediaFile.by_id_or_name(session, parameter)
+    if not mediafile:
+        mediafile = add_mediafile(session, parameter)
+    return mediafile
 
 
 @command
-def remove_corpus(session, corpus):
-    """Remove a corpus and all records related to it.
+def remove_mediafile(session, mediafile):
+    """Remove a mediafile and all records related to it.
 
     session     -- Database session
-    corpus      -- A corpus object, ID or a filepath
+    mediafile   -- A mediafile object, ID or a filepath
     """
 
-    if not isinstance(corpus, models.Corpus):
-        corpus = models.Corpus.by_id_or_name(session, corpus)
+    if not isinstance(mediafile, models.MediaFile):
+        mediafile = models.MediaFile.by_id_or_name(session, mediafile)
 
-    for feature in corpus.features:
+    for feature in mediafile.features:
         session.delete(feature)
 
-    for unit in corpus.units:
+    for unit in mediafile.units:
         session.delete(unit)
 
-    session.delete(corpus)
+    session.delete(mediafile)
     session.commit()

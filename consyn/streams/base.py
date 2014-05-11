@@ -165,9 +165,9 @@ class SliceStream(Stream):
 
 class SelectionStream(Stream):
 
-    def __init__(self, session, corpi):
+    def __init__(self, session, mediafiles):
         super(SelectionStream, self).__init__()
-        self.corpi = [corpus.id for corpus in corpi]
+        self.mediafiles = [mediafile.id for mediafile in mediafiles]
         self.session = session
 
     def __call__(self, pipe):

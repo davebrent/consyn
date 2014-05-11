@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-"""Remove corpi
+"""Remove mediafiles
 
-usage: consyn remove <corpi>...
+usage: consyn remove <mediafiles>...
 
 """
 import docopt
@@ -14,15 +14,16 @@ from .. import commands
 
 def command(session, paths=None, verbose=True, force=False):
     args = docopt.docopt(__doc__)
-    corpi = args["<corpi>"]
+    mediafiles = args["<mediafiles>"]
 
-    if len(corpi) == 1 and corpi[0] == "all":
-        corpi = [corpus.id for corpus in session.query(models.Corpus).all()]
+    if len(mediafiles) == 1 and mediafiles[0] == "all":
+        mediafiles = [mediafile.id
+                      for mediafile in session.query(models.MediaFile).all()]
 
-    for param in corpi:
-        corpus = models.Corpus.by_id_or_name(session, param)
-        if not corpus:
-            puts(colored.red("Corpus {} not found".format(param)))
+    for param in mediafiles:
+        mediafile = models.MediaFile.by_id_or_name(session, param)
+        if not mediafile:
+            puts(colored.red("MediaFile {} not found".format(param)))
             continue
 
-        commands.remove_corpus(session, corpus)
+        commands.remove_mediafile(session, mediafile)

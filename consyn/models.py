@@ -17,7 +17,7 @@ from .settings import FEATURE_TYPE
 Base = declarative_base()
 
 
-class Corpus(Base):
+class MediaFile(Base):
     """
     id          -- Unique ID.
     path        -- Absolute path to the file.
@@ -33,8 +33,8 @@ class Corpus(Base):
     samplerate = Column(Integer, nullable=False)
     duration = Column(Integer, nullable=False)
 
-    units = relationship("Unit", backref="corpus")
-    features = relationship("Features", backref="corpus")
+    units = relationship("Unit", backref="mediafile")
+    features = relationship("Features", backref="mediafile")
 
     @property
     def name(self):
@@ -57,7 +57,7 @@ class Corpus(Base):
         keys = ["id", "name", "duration", "channels", "samplerate"]
         values = ["{}={}".format(key, getattr(self, key)) for key in keys]
         values.append("units={}".format(len(self.units)))
-        return "<Corpus({})>".format(", ".join(values))
+        return "<MediaFile({})>".format(", ".join(values))
 
     def __str__(self):
         return self.__repr__()
@@ -65,15 +65,15 @@ class Corpus(Base):
 
 class Unit(Base):
     """
-    corpus      -- The corpus that this unit is related to.
-    channel     -- The channel that the unit belongs to in the corpus
+    mediafile   -- The mediafile that this unit is related to.
+    channel     -- The channel that the unit belongs to in the mediafile
     position    -- The sample position that the unit belongs to in the channel
     duration    -- Duration in samples
     """
 
     __tablename__ = "units"
     id = Column(Integer, primary_key=True)
-    corpus_id = Column(Integer, ForeignKey("corpi.id"))
+    mediafile_id = Column(Integer, ForeignKey("corpi.id"))
     channel = Column(Integer, nullable=False)
     position = Column(Integer, nullable=False)
     duration = Column(Integer, nullable=False)
@@ -82,7 +82,7 @@ class Unit(Base):
     def __repr__(self):
         keys = ["channel", "position", "duration"]
         values = ["{}={}".format(key, getattr(self, key)) for key in keys]
-        values.insert(0, "corpus={}".format(self.corpus.name))
+        values.insert(0, "mediafile={}".format(self.mediafile.name))
         return "<Unit({})>".format(", ".join(values))
 
     def __str__(self):
@@ -93,7 +93,7 @@ class Features(Base):
     """
     id          -- Unique identifier for the set of features.
     unit        -- The unit the set of features describes.
-    corpus      -- The corpus the set of features is part of.
+    mediafile   -- The mediafile the set of features is part of.
     feat_*      -- The value of the feature.
     label_*     -- The human readable name of the feature.
     """
@@ -102,7 +102,7 @@ class Features(Base):
         "features", Base.metadata,
         Column("id", Integer, primary_key=True),
         Column("unit_id", Integer, ForeignKey("units.id")),
-        Column("corpus_id", Integer, ForeignKey("corpi.id")),
+        Column("mediafile_id", Integer, ForeignKey("corpi.id")),
         *list((Column("feat_{}".format(feature), FEATURE_TYPE, nullable=True,
                default=0)
               for feature in range(FEATURE_SLOTS))) +
@@ -113,7 +113,7 @@ class Features(Base):
     def __init__(self, unit, features):
         if unit:
             self.unit = unit
-            self.corpus = unit.corpus
+            self.mediafile = unit.mediafile
 
         if features:
             assert len(features) <= FEATURE_SLOTS

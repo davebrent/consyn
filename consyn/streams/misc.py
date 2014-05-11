@@ -3,14 +3,14 @@ import numpy
 
 from .base import Pool
 from .base import Stream
-from ..models import Corpus
+from ..models import MediaFile
 from ..settings import DTYPE
 
 
 __all__ = [
     "UnitGenerator",
-    "CorpusSampleBuilder",
-    "CorpusWriter"
+    "MediaFileSampleBuilder",
+    "MediaFileWriter"
 ]
 
 
@@ -22,19 +22,19 @@ class UnitGenerator(Stream):
 
     def __call__(self, pipe):
         for pool in pipe:
-            if not isinstance(pool["corpus"], Corpus):
-                pool["corpus"] = Corpus.by_id_or_name(
-                    self.session, pool["corpus"])
+            if not isinstance(pool["mediafile"], MediaFile):
+                pool["mediafile"] = MediaFile.by_id_or_name(
+                    self.session, pool["mediafile"])
 
-            for unit in pool["corpus"].units:
+            for unit in pool["mediafile"].units:
                 pool["unit"] = unit
                 yield pool
 
 
-class CorpusSampleBuilder(Stream):
+class MediaFileSampleBuilder(Stream):
 
     def __init__(self, unit_key="unit", channels=2):
-        super(CorpusSampleBuilder, self).__init__()
+        super(MediaFileSampleBuilder, self).__init__()
         self.unit_key = unit_key
         self.channels = channels
         self.buffers = {}
@@ -43,29 +43,29 @@ class CorpusSampleBuilder(Stream):
 
     def __call__(self, pipe):
         for pool in pipe:
-            corpus = pool["corpus"]
+            mediafile = pool["mediafile"]
             target = pool[self.unit_key]
             samples = pool["frame"].samples
 
-            if corpus.path in self.end:
+            if mediafile.path in self.end:
                 continue
 
-            if corpus.path not in self.buffers:
-                self.counts[corpus.path] = 0
-                self.buffers[corpus.path] = numpy.zeros(
-                    (corpus.channels, corpus.duration),
+            if mediafile.path not in self.buffers:
+                self.counts[mediafile.path] = 0
+                self.buffers[mediafile.path] = numpy.zeros(
+                    (mediafile.channels, mediafile.duration),
                     dtype=DTYPE)
 
-            buff = self.buffers[corpus.path]
+            buff = self.buffers[mediafile.path]
             buff[target.channel][
                 target.position:target.position + target.duration] = samples
-            self.counts[corpus.path] += 1
+            self.counts[mediafile.path] += 1
 
-            if self.counts[corpus.path] == (len(corpus.units) - 1) and \
-                    corpus.path not in self.end:
-                self.end[corpus.path] = True
+            if self.counts[mediafile.path] == (len(mediafile.units) - 1) and \
+                    mediafile.path not in self.end:
+                self.end[mediafile.path] = True
                 new_pool = Pool(initial={
-                    "corpus": pool["corpus"],
+                    "mediafile": pool["mediafile"],
                     "buffer": buff
                 })
 
@@ -75,16 +75,16 @@ class CorpusSampleBuilder(Stream):
                 yield new_pool
 
 
-class CorpusWriter(Stream):
+class MediaFileWriter(Stream):
 
     def __call__(self, pipe):
         for pool in pipe:
             framesize = 1024
-            corpus = pool["corpus"]
+            mediafile = pool["mediafile"]
             buff = pool["buffer"]
             outfile = pool["out"]
 
-            sink = aubio.sink(outfile, 0, corpus.channels)
+            sink = aubio.sink(outfile, 0, mediafile.channels)
             out_samples = numpy.array_split(buff, framesize, axis=1)
 
             for frame in out_samples:

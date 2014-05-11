@@ -211,8 +211,8 @@ class UnitGeneratorTests(unittest.TestCase):
     def _test_iter_amount(self, name, num):
         session = DummySession()
         path = os.path.join(SOUND_DIR, name)
-        corpus = commands.add_corpus(session, path)
-        initial = [streams.Pool(initial={"corpus": corpus})]
+        mediafile = commands.add_mediafile(session, path)
+        initial = [streams.Pool(initial={"mediafile": mediafile})]
         results = initial >> streams.UnitGenerator(session) >> list
         self.assertEqual(len(results), num)
 

@@ -36,15 +36,13 @@ def command(session):
 
     try:
         for path in set(paths):
-            path = os.path.abspath(path)
-
             if not os.path.isfile(path):
                 failures.append("File does not exist {}".format(path))
                 progress_bar.next()
                 continue
 
             try:
-                exists = models.Corpus.by_id_or_name(session, path)
+                exists = models.MediaFile.by_id_or_name(session, path)
             except ProgrammingError:
                 # FIXME:
                 failures.append("Unicode error {}".format(path))
@@ -59,7 +57,7 @@ def command(session):
                     progress_bar.next()
                     continue
 
-            commands.add_corpus(
+            commands.add_mediafile(
                 session, path,
                 bufsize=int(args["--bufsize"]),
                 hopsize=int(args["--hopsize"]),

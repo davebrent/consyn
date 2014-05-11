@@ -1,7 +1,6 @@
 import aubio
 import numpy
 
-from .base import Pool
 from .base import Stream
 from ..models import MediaFile
 from ..settings import DTYPE
@@ -64,10 +63,10 @@ class MediaFileSampleBuilder(Stream):
             if self.counts[mediafile.path] == (len(mediafile.units) - 1) and \
                     mediafile.path not in self.end:
                 self.end[mediafile.path] = True
-                new_pool = Pool(initial={
+                new_pool = {
                     "mediafile": pool["mediafile"],
                     "buffer": buff
-                })
+                }
 
                 if pool.values.get("out"):
                     new_pool["out"] = pool["out"]
@@ -94,4 +93,4 @@ class MediaFileWriter(Stream):
             sink.close()
             del sink
 
-            yield Pool(initial={"out": pool["out"]})
+            yield {"out": pool["out"]}

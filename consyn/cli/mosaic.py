@@ -31,7 +31,7 @@ class ProgressBar(object):
 
 
 def cmd_mosaic(session, outfile, target, mediafiles):
-    [streams.Pool({"mediafile": target.path, "out": outfile})] \
+    [{"mediafile": target.path, "out": outfile}] \
         >> streams.UnitGenerator(session) \
         >> streams.ManhattenDistanceSelection(session, mediafiles) \
         >> streams.AubioUnitLoader(

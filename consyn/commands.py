@@ -46,7 +46,7 @@ def add_mediafile(session, path, bufsize=settings.BUFSIZE,
     threshold   -- The threshold to use for onset detection
     """
 
-    results = [streams.Pool({"path": path})] \
+    results = [{"path": path}] \
         >> streams.AubioFrameLoader(bufsize=bufsize, hopsize=hopsize) \
         >> streams.SlicerFactory(
             "onsets",

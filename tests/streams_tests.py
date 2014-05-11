@@ -17,7 +17,7 @@ class FrameSampleReaderTest(unittest.TestCase):
     def test_iterframes_in_order(self):
         path = os.path.join(SOUND_DIR, "amen-stereo.wav")
 
-        result = [streams.Pool(initial={"path": path})] \
+        result = [{"path": path}] \
             >> streams.AubioFrameLoader(bufsize=1024, hopsize=1024) \
             >> list
 
@@ -38,7 +38,7 @@ class OnsetSlicerTest(unittest.TestCase):
     def _onset_test(self, path, channels, expected_onsets, expected_duration):
         path = os.path.join(SOUND_DIR, path)
 
-        result = [streams.Pool(initial={"path": path})] \
+        result = [{"path": path}] \
             >> streams.AubioFrameLoader(bufsize=1024, hopsize=1024) \
             >> streams.OnsetSlicer(
                 winsize=1024,
@@ -67,7 +67,7 @@ class RegularSlicerTest(unittest.TestCase):
     def test_simple_slices(self):
         path = os.path.join(SOUND_DIR, "amen-mono.wav")
 
-        results = [streams.Pool(initial={"path": path})] \
+        results = [{"path": path}] \
             >> streams.AubioFrameLoader(bufsize=1024, hopsize=1024) \
             >> streams.RegularSlicer(winsize=2048) \
             >> list
@@ -103,7 +103,7 @@ class BeatSlicerTest(unittest.TestCase):
     def test_slice(self):
         path = os.path.join(SOUND_DIR, "amen-mono.wav")
 
-        results = [streams.Pool(initial={"path": path})] \
+        results = [{"path": path}] \
             >> streams.AubioFrameLoader(bufsize=1024, hopsize=1024) \
             >> streams.BeatSlicer(bpm=150, interval="1/16") \
             >> list
@@ -125,7 +125,7 @@ class SampleAnalyserTest(unittest.TestCase):
 
         analyser = streams.SampleAnalyser(winsize=bufsize, hopsize=bufsize)
 
-        result = [streams.Pool(initial={"path": path})] \
+        result = [{"path": path}] \
             >> streams.AubioFrameLoader(bufsize=bufsize, hopsize=bufsize) \
             >> analyser \
             >> list
@@ -143,7 +143,7 @@ class SampleAnalyserTest(unittest.TestCase):
 
         analyser = streams.SampleAnalyser(winsize=1024, hopsize=512)
 
-        result = [streams.Pool(initial={"path": path})] \
+        result = [{"path": path}] \
             >> streams.AubioFrameLoader(bufsize=bufsize, hopsize=bufsize) \
             >> streams.OnsetSlicer(
                 winsize=1024,
@@ -171,7 +171,7 @@ class UnitSampleReaderTests(unittest.TestCase):
         self.assertEqual(unit.channel, 0)
         self.assertEqual(unit.position, 0)
 
-        initial = [streams.Pool(initial={"path": path, "unit": unit})]
+        initial = [{"path": path, "unit": unit}]
         loader = streams.AubioUnitLoader(bufsize=bufsize, hopsize=bufsize)
         result = initial >> loader >> list
 
@@ -194,7 +194,7 @@ class UnitSampleReaderTests(unittest.TestCase):
         loader = streams.AubioUnitLoader(bufsize=bufsize, hopsize=bufsize)
 
         for index in range(reads):
-            initial = [streams.Pool(initial={"path": path, "unit": unit})]
+            initial = [{"path": path, "unit": unit}]
             result = initial >> loader >> list
 
             self.assertEqual(len(result), 1)
@@ -212,7 +212,7 @@ class UnitGeneratorTests(unittest.TestCase):
         session = DummySession()
         path = os.path.join(SOUND_DIR, name)
         mediafile = commands.add_mediafile(session, path)
-        initial = [streams.Pool(initial={"mediafile": mediafile})]
+        initial = [{"mediafile": mediafile}]
         results = initial >> streams.UnitGenerator(session) >> list
         self.assertEqual(len(results), num)
 
@@ -230,11 +230,11 @@ class DurationClipperTests(unittest.TestCase):
         target = models.Unit(duration=target_dur, position=target_pos)
         unit = models.Unit(duration=unit_dur, position=unit_pos)
 
-        pool = streams.Pool(initial={
+        pool = {
             "frame": streams.AudioFrame(samples=samples),
             "target": target,
             "unit": unit
-        })
+        }
 
         results = [pool] >> streams.DurationClipper() >> list
 

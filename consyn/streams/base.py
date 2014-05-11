@@ -6,7 +6,6 @@ import collections
 __all__ = [
     "AudioFrame",
     "Stream",
-    "Pool",
     "StreamFactory",
     "FrameLoaderStream",
     "UnitLoaderStream",
@@ -64,30 +63,6 @@ class Stream(object):
 
     def __rrshift__(self, inpipe):
         return Stream.pipe(inpipe, self)
-
-
-class Pool(object):
-
-    def __init__(self, initial={}):
-        self.values = initial
-
-    def __getattr__(self, name):
-        return self.values[name]
-
-    def __getitem__(self, name):
-        return self.values[name]
-
-    def __setitem__(self, name, value):
-        self.values[name] = value
-
-    def values(self):
-        return self.values
-
-    def __delitem__(self, name):
-        del self.values[name]
-
-    def __str__(self):
-        return self.values.__str__()
 
 
 class StreamFactory(object):
@@ -149,12 +124,12 @@ class SliceStream(Stream):
             _slice = self.observe(pool["frame"])
             if _slice is None:
                 continue
-            yield Pool(initial={"frame": _slice})
+            yield {"frame": _slice}
 
         closing = self.finish()
         if isinstance(closing, collections.Iterable):
             for _slice in closing:
-                yield Pool(initial={"frame": _slice})
+                yield {"frame": _slice}
 
     def observe(self, samples, read, position, channel, samplerate, path):
         raise NotImplementedError("SliceStreams must implement this")

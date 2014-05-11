@@ -33,7 +33,7 @@ def command(session, paths=None, verbose=True, force=False):
 
     mediafile = models.MediaFile.by_id_or_name(session, args["<input>"])
 
-    results = [streams.Pool({"mediafile": mediafile})] \
+    results = [{"mediafile": mediafile}] \
         >> streams.UnitGenerator(session) \
         >> streams.AubioUnitLoader(
             bufsize=int(args["--framesize"]),

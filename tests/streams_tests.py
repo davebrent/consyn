@@ -118,12 +118,11 @@ class BeatSlicerTest(unittest.TestCase):
             error = True
         self.assertTrue(error)
 
-    @unittest.expectedFailure
     def test_slice(self):
         path = os.path.join(SOUND_DIR, "amen-mono.wav")
 
         results = [{"path": path}] \
-            >> streams.AubioFrameLoader(bufsize=1024, hopsize=1024) \
+            >> streams.AubioFrameLoader(hopsize=512) \
             >> streams.BeatSlicer(bpm=150, interval="1/16") \
             >> list
 

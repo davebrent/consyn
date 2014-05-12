@@ -36,7 +36,6 @@ def command(session, paths=None, verbose=True, force=False):
     results = [{"mediafile": mediafile}] \
         >> streams.UnitGenerator(session) \
         >> streams.AubioUnitLoader(
-            bufsize=int(args["--framesize"]),
             hopsize=int(args["--framesize"]),
             key=lambda state: state["unit"].mediafile.path) \
         >> streams.MediaFileSampleBuilder() \

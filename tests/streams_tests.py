@@ -63,21 +63,20 @@ class OnsetSlicerTest(unittest.TestCase):
     def test_simple_mono_segments(self):
         self._onset_test("amen-mono.wav", 1, 10, 70560)
 
-    @unittest.expectedFailure
     def test_same_as_aubioonset(self):
         """Deteted onsets should be similar to those detected by aubioonset"""
-        blocksize = 512
-        result = [{"path": os.path.join(SOUND_DIR, "amen-mono.wav")}] \
-            >> streams.AubioFrameLoader(hopsize=blocksize) \
+        bufsize = 512
+        hopsize = 256
+        results = [{"path": os.path.join(SOUND_DIR, "amen-mono.wav")}] \
+            >> streams.AubioFrameLoader(hopsize=hopsize) \
             >> streams.OnsetSlicer(
-                winsize=blocksize,
-                hopsize=256,
-                threshold=0,
-                min_slice_size=0,
+                winsize=bufsize,
+                hopsize=hopsize,
                 method="default") \
             >> list
 
-        self.assertEqual(map(lambda r: r["frame"].position, result), [
+        # values from aubioonset & aubio/demos/demo_onset.py
+        self.assertEqual(map(lambda r: r["frame"].position, results), [
             0, 8657, 17410, 26321, 30819, 35069, 39755, 43934, 52727, 61561
         ])
 

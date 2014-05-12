@@ -93,7 +93,7 @@ class BaseSlicer(SliceStream):
 class OnsetSlicer(BaseSlicer):
 
     def __init__(self, winsize=1024, threshold=0.3, method="default",
-                 hopsize=512, min_slice_size=8192, silence=-90):
+                 hopsize=512, min_slice_size=0, silence=-90):
         super(OnsetSlicer, self).__init__(min_slice_size=min_slice_size)
         self.winsize = winsize
         self.hopsize = hopsize
@@ -102,13 +102,14 @@ class OnsetSlicer(BaseSlicer):
         self.silence = silence
 
     def get_detector(self):
-        detector = aubio.onset(self.method, self.winsize, self.hopsize)
+        detector = aubio.onset(self.method, self.winsize, self.hopsize,
+                               self.samplerate)
         detector.set_threshold(self.threshold)
         detector.set_silence(self.silence)
         return detector
 
     def get_onset_position(self, _slice):
-        return _slice.detector.get_last() * (self.winsize / self.hopsize)
+        return _slice.detector.get_last()
 
 
 class RegularDetector(object):

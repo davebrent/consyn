@@ -83,10 +83,8 @@ class StreamFactory(object):
 
 class FrameLoaderStream(Stream):
 
-    def __init__(self, bufsize=1024, hopsize=512,
-                 key=lambda pool: pool["path"]):
+    def __init__(self, hopsize=1024, key=lambda pool: pool["path"]):
         super(FrameLoaderStream, self).__init__()
-        self.bufsize = bufsize
         self.hopsize = hopsize
         self.key = key
 
@@ -101,10 +99,8 @@ class FrameLoaderStream(Stream):
 
 class UnitLoaderStream(Stream):
 
-    def __init__(self, bufsize=1024, hopsize=512,
-                 key=lambda pool: pool["path"]):
+    def __init__(self, hopsize=1024, key=lambda pool: pool["path"]):
         super(UnitLoaderStream, self).__init__()
-        self.bufsize = bufsize
         self.hopsize = hopsize
         self.key = key
 

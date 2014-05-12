@@ -34,7 +34,7 @@ def command(fn):
 @command
 def add_mediafile(session, path, bufsize=settings.BUFSIZE,
                   hopsize=settings.HOPSIZE, minsize=settings.BUFSIZE,
-                  method="default", threshold=0):
+                  method="default", threshold=0.3):
     """Add a mediafile to the database.
 
     session     -- Database session
@@ -47,7 +47,7 @@ def add_mediafile(session, path, bufsize=settings.BUFSIZE,
     """
 
     results = [{"path": path}] \
-        >> streams.AubioFrameLoader(bufsize=bufsize, hopsize=hopsize) \
+        >> streams.AubioFrameLoader(hopsize=bufsize) \
         >> streams.SlicerFactory(
             "onsets",
             winsize=bufsize,

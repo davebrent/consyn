@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 class AubioFrameLoader(FrameLoaderStream):
 
     def read(self, path):
-        soundfile = aubio.source(path, 0, self.bufsize)
+        soundfile = aubio.source(path, 0, self.hopsize)
         soundfile.seek(0)
 
         index = 0
@@ -58,7 +58,7 @@ class AubioFrameLoader(FrameLoaderStream):
 class AubioUnitLoader(UnitLoaderStream):
 
     def read(self, path, unit):
-        soundfile = aubio.source(path, 0, self.bufsize)
+        soundfile = aubio.source(path, 0, self.hopsize)
         soundfile.seek(unit.position)
 
         pos = 0

@@ -18,7 +18,7 @@ class FrameSampleReaderTest(unittest.TestCase):
         path = os.path.join(SOUND_DIR, "amen-stereo.wav")
 
         result = [{"path": path}] \
-            >> streams.AubioFrameLoader(bufsize=1024, hopsize=1024) \
+            >> streams.AubioFrameLoader(hopsize=1024) \
             >> list
 
         self.assertEqual(len(result), 138)
@@ -39,7 +39,7 @@ class OnsetSlicerTest(unittest.TestCase):
         path = os.path.join(SOUND_DIR, path)
 
         result = [{"path": path}] \
-            >> streams.AubioFrameLoader(bufsize=1024, hopsize=1024) \
+            >> streams.AubioFrameLoader(hopsize=1024) \
             >> streams.OnsetSlicer(
                 winsize=1024,
                 threshold=0,
@@ -55,11 +55,31 @@ class OnsetSlicerTest(unittest.TestCase):
                 expected_duration,
                 result[pos]["frame"].position + result[pos]["frame"].duration)
 
+        return result
+
     def test_simple_stereo_segments(self):
         self._onset_test("amen-stereo.wav", 2, 10, 70560)
 
     def test_simple_mono_segments(self):
         self._onset_test("amen-mono.wav", 1, 10, 70560)
+
+    @unittest.expectedFailure
+    def test_same_as_aubioonset(self):
+        """Deteted onsets should be similar to those detected by aubioonset"""
+        blocksize = 512
+        result = [{"path": os.path.join(SOUND_DIR, "amen-mono.wav")}] \
+            >> streams.AubioFrameLoader(hopsize=blocksize) \
+            >> streams.OnsetSlicer(
+                winsize=blocksize,
+                hopsize=256,
+                threshold=0,
+                min_slice_size=0,
+                method="default") \
+            >> list
+
+        self.assertEqual(map(lambda r: r["frame"].position, result), [
+            0, 8657, 17410, 26321, 30819, 35069, 39755, 43934, 52727, 61561
+        ])
 
 
 class RegularSlicerTest(unittest.TestCase):
@@ -68,7 +88,7 @@ class RegularSlicerTest(unittest.TestCase):
         path = os.path.join(SOUND_DIR, "amen-mono.wav")
 
         results = [{"path": path}] \
-            >> streams.AubioFrameLoader(bufsize=1024, hopsize=1024) \
+            >> streams.AubioFrameLoader(hopsize=1024) \
             >> streams.RegularSlicer(winsize=2048) \
             >> list
 
@@ -126,7 +146,7 @@ class SampleAnalyserTest(unittest.TestCase):
         analyser = streams.SampleAnalyser(winsize=bufsize, hopsize=bufsize)
 
         result = [{"path": path}] \
-            >> streams.AubioFrameLoader(bufsize=bufsize, hopsize=bufsize) \
+            >> streams.AubioFrameLoader(hopsize=bufsize) \
             >> analyser \
             >> list
 
@@ -144,7 +164,7 @@ class SampleAnalyserTest(unittest.TestCase):
         analyser = streams.SampleAnalyser(winsize=1024, hopsize=512)
 
         result = [{"path": path}] \
-            >> streams.AubioFrameLoader(bufsize=bufsize, hopsize=bufsize) \
+            >> streams.AubioFrameLoader(hopsize=bufsize) \
             >> streams.OnsetSlicer(
                 winsize=1024,
                 threshold=0,
@@ -172,7 +192,7 @@ class UnitSampleReaderTests(unittest.TestCase):
         self.assertEqual(unit.position, 0)
 
         initial = [{"path": path, "unit": unit}]
-        loader = streams.AubioUnitLoader(bufsize=bufsize, hopsize=bufsize)
+        loader = streams.AubioUnitLoader(hopsize=bufsize)
         result = initial >> loader >> list
 
         self.assertEqual(len(result), 1)
@@ -191,7 +211,7 @@ class UnitSampleReaderTests(unittest.TestCase):
         self.assertEqual(unit.channel, 0)
         self.assertEqual(unit.position, 0)
 
-        loader = streams.AubioUnitLoader(bufsize=bufsize, hopsize=bufsize)
+        loader = streams.AubioUnitLoader(hopsize=bufsize)
 
         for index in range(reads):
             initial = [{"path": path, "unit": unit}]
@@ -211,7 +231,7 @@ class UnitGeneratorTests(unittest.TestCase):
     def _test_iter_amount(self, name, num):
         session = DummySession()
         path = os.path.join(SOUND_DIR, name)
-        mediafile = commands.add_mediafile(session, path)
+        mediafile = commands.add_mediafile(session, path, threshold=0)
         initial = [{"mediafile": mediafile}]
         results = initial >> streams.UnitGenerator(session) >> list
         self.assertEqual(len(results), num)

@@ -36,7 +36,8 @@ class AudioFrame(object):
 
     def __repr__(self):
         keys = ['position', 'duration', 'channel', 'samplerate']
-        values = ["{}={}".format(key, getattr(self, key)) for key in keys]
+        values = ["{}={}".format(key, getattr(self, key)) for key in keys
+                  if hasattr(self, key)]
         return "<AudioFrame({})>".format(", ".join(values))
 
 

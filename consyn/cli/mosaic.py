@@ -35,7 +35,6 @@ def cmd_mosaic(session, outfile, target, mediafiles):
         >> streams.UnitGenerator(session) \
         >> streams.ManhattenDistanceSelection(session, mediafiles) \
         >> streams.AubioUnitLoader(
-            bufsize=2048,
             hopsize=2048,
             key=lambda state: state["unit"].mediafile.path) \
         >> streams.DurationClipper() \

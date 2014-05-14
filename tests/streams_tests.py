@@ -258,15 +258,20 @@ class DurationClipperTests(unittest.TestCase):
 
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0]["frame"].samples.shape[0], target_dur)
+        return results[0]["frame"].samples
 
     def test_less_than(self):
-        self._test_simple(numpy.arange(18), 18, 3, 20, 2)
+        result = self._test_simple(numpy.arange(18), 18, 3, 20, 2)
+        self.assertEqual(list(numpy.arange(18)) + [0, 0], list(result))
 
     def test_more_than(self):
-        self._test_simple(numpy.arange(25), 25, 3, 20, 2)
+        result = self._test_simple(numpy.arange(25), 25, 3, 20, 2)
+        self.assertEqual(list(numpy.arange(20)), list(result))
 
     def test_equal(self):
-        self._test_simple(numpy.arange(20), 20, 2, 20, 2)
+        samples = numpy.arange(20)
+        result = self._test_simple(numpy.arange(20), 20, 2, 20, 2)
+        self.assertEqual(list(samples), list(result))
 
 
 class SlicerFactoryTests(unittest.TestCase):

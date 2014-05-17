@@ -9,7 +9,7 @@ options:
    -v, --version
 
 commands:
-    add, show, remove, mosaic, status
+    add, show, remove, mosaic, ls
 
 """
 import sys
@@ -24,13 +24,13 @@ from .add import command as cmd_add
 from .mosaic import command as cmd_mosaic
 from .remove import command as cmd_remove
 from .show import command as cmd_show
-from .status import command as cmd_status
+from .ls import command as cmd_ls
 
 
 commands = {
     "add": cmd_add,
     "show": cmd_show,
-    "status": cmd_status,
+    "ls": cmd_ls,
     "mosaic": cmd_mosaic,
     "remove": cmd_remove
 }

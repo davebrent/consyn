@@ -13,6 +13,8 @@ commands:
     add, show, remove, mosaic, ls
 
 """
+import sys
+
 from docopt import docopt
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -37,14 +39,17 @@ commands = {
 
 def main():
     args = docopt(__doc__, help=False)
+    params = sys.argv[1:]
+
     if args["<command>"] not in commands:
         print(__doc__)
     else:
         db_url = DATABASE_URL
         if args["--database"]:
             db_url = args["--database"]
+            params.pop(0)
 
         engine = create_engine(db_url)
         Base.metadata.create_all(engine)
         Session = sessionmaker(bind=engine)
-        commands[args["<command>"]](Session())
+        commands[args["<command>"]](Session(), argv=params)

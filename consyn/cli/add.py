@@ -27,8 +27,8 @@ from ..commands import add_mediafile
 from ..commands import remove_mediafile
 
 
-def command(session):
-    args = docopt(__doc__)
+def command(session, argv=None):
+    args = docopt(__doc__, argv=argv)
     paths = args["<input>"]
 
     progress_bar = progress.bar(range(len(paths)))

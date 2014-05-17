@@ -30,8 +30,8 @@ def samps_to_secs(samples, samplerate):
     return float(samples) / samplerate
 
 
-def command(session, paths=None, verbose=True, force=False):
-    args = docopt.docopt(__doc__)
+def command(session, argv=None):
+    args = docopt.docopt(__doc__, argv=argv)
 
     mediafile = MediaFile.by_id_or_name(session, args["<input>"])
 

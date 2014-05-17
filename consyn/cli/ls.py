@@ -8,11 +8,13 @@ import os
 
 from clint.textui import colored
 from clint.textui import puts
+from docopt import docopt
 
 from ..models import MediaFile
 
 
-def command(session, paths=None, verbose=True, force=False):
+def command(session, argv=None):
+    docopt(__doc__, argv=argv)
     col1 = len(str(session.query(MediaFile).count()))
     if col1 < 2:
         col1 = 2

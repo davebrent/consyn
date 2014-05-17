@@ -51,8 +51,8 @@ def cmd_mosaic(session, outfile, target, mediafiles):
     return True
 
 
-def command(session, verbose=True, force=False):
-    args = docopt.docopt(__doc__)
+def command(session, argv=None):
+    args = docopt.docopt(__doc__, argv=argv)
 
     if os.path.isfile(args["<outfile>"]) and not args["--force"]:
         puts(colored.red("File already exists"))

@@ -12,8 +12,8 @@ from ..models import MediaFile
 from ..commands import remove_mediafile
 
 
-def command(session, paths=None, verbose=True, force=False):
-    args = docopt.docopt(__doc__)
+def command(session, argv=None):
+    args = docopt.docopt(__doc__, argv=argv)
     mediafiles = args["<mediafiles>"]
 
     if len(mediafiles) == 1 and mediafiles[0] == "all":

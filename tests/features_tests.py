@@ -7,12 +7,12 @@ import numpy
 
 from consyn.loaders import AubioFrameLoader
 from consyn.slicers import OnsetSlicer
-from consyn.analysers import SampleAnalyser
+from consyn.features import AubioFeatures
 
 from . import SOUND_DIR
 
 
-class SampleAnalyserTests(unittest.TestCase):
+class AubioFeaturesTests(unittest.TestCase):
 
     def test_same_buffersize(self):
         bufsize = 1024
@@ -20,7 +20,7 @@ class SampleAnalyserTests(unittest.TestCase):
         channels = 2
         path = os.path.join(SOUND_DIR, "amen-stereo.wav")
 
-        analyser = SampleAnalyser(winsize=bufsize, hopsize=bufsize)
+        analyser = AubioFeatures(winsize=bufsize, hopsize=bufsize)
 
         result = [{"path": path}] \
             >> AubioFrameLoader(hopsize=bufsize) \
@@ -38,7 +38,7 @@ class SampleAnalyserTests(unittest.TestCase):
         bufsize = 1024
         path = os.path.join(SOUND_DIR, "amen-stereo.wav")
 
-        analyser = SampleAnalyser(winsize=1024, hopsize=512)
+        analyser = AubioFeatures(winsize=1024, hopsize=512)
 
         result = [{"path": path}] \
             >> AubioFrameLoader(hopsize=bufsize) \

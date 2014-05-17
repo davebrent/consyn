@@ -4,7 +4,7 @@ import os
 import time
 
 from . import settings
-from .analysers import SampleAnalyser
+from .features import AubioFeatures
 from .loaders import AubioFrameLoader
 from .models import Features
 from .models import MediaFile
@@ -60,7 +60,7 @@ def add_mediafile(session, path, bufsize=settings.BUFSIZE,
             method=method,
             threshold=threshold,
             silence=-90) \
-        >> SampleAnalyser(winsize=bufsize, hopsize=hopsize)
+        >> AubioFeatures(winsize=bufsize, hopsize=hopsize)
 
     mediafile = MediaFile(duration=0, channels=1)
 

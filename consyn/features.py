@@ -5,7 +5,7 @@ import numpy
 from .base import AnalysisSteam
 
 
-__all__ = ["SampleAnalyser"]
+__all__ = ["AubioFeatures"]
 
 
 def _slice_array(arr, bufsize=1024, hopsize=512):
@@ -20,18 +20,32 @@ def _slice_array(arr, bufsize=1024, hopsize=512):
         position += hopsize
 
 
-class SampleAnalyser(AnalysisSteam):
+class AubioFeatures(AnalysisSteam):
 
     def __init__(self, samplerate=44100, winsize=1024, hopsize=512, filters=40,
                  coeffs=13):
-        super(SampleAnalyser, self).__init__()
+        super(AubioFeatures, self).__init__()
         self.winsize = winsize
         self.hopsize = hopsize
         self.descriptors = {}
-        self.methods = ["default", "energy", "hfc", "complex", "phase",
-                        "specdiff", "kl", "mkl", "specflux", "centroid",
-                        "slope", "rolloff", "spread", "skewness", "kurtosis",
-                        "decrease"]
+        self.methods = [
+            "default",
+            "energy",
+            "hfc",
+            "complex",
+            "phase",
+            "specdiff",
+            "kl",
+            "mkl",
+            "specflux",
+            "centroid",
+            "slope",
+            "rolloff",
+            "spread",
+            "skewness",
+            "kurtosis",
+            "decrease"
+        ]
 
         for method in self.methods:
             self.descriptors[method] = aubio.specdesc(method, self.winsize)

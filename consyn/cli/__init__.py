@@ -2,24 +2,23 @@
 # -*- coding: utf-8 -*-
 """A concatenative synthesis command line tool.
 
-usage: consyn [--version] [--help] <command> [<args>...]
+usage: consyn [options] <command> [<args>...]
 
 options:
    -h, --help
    -v, --version
+   -d, --database
 
 commands:
     add, show, remove, mosaic, ls
 
 """
-import sys
-
+from docopt import docopt
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from ..models import Base
 from ..settings import DATABASE_URL
-
 from .add import command as cmd_add
 from .mosaic import command as cmd_mosaic
 from .remove import command as cmd_remove
@@ -37,10 +36,15 @@ commands = {
 
 
 def main():
-    if len(sys.argv) < 2 or sys.argv[1] not in commands:
+    args = docopt(__doc__, help=False)
+    if args["<command>"] not in commands:
         print(__doc__)
     else:
-        engine = create_engine(DATABASE_URL)
+        db_url = DATABASE_URL
+        if args["--database"]:
+            db_url = args["--database"]
+
+        engine = create_engine(db_url)
         Base.metadata.create_all(engine)
         Session = sessionmaker(bind=engine)
-        commands[sys.argv[1]](Session())
+        commands[args["<command>"]](Session())

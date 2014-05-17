@@ -7,7 +7,7 @@ from .settings import DTYPE
 
 __all__ = [
     "DurationClipper",
-    "EnvelopeUnits"
+    "Envelope"
 ]
 
 
@@ -27,7 +27,7 @@ class DurationClipper(ResynthesisStream):
         return tmp, unit
 
 
-class EnvelopeUnits(ResynthesisStream):
+class Envelope(ResynthesisStream):
 
     def process(self, samples, unit, target):
         duration = samples.shape[0]

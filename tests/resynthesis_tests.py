@@ -5,6 +5,7 @@ import numpy
 
 from consyn.models import Unit
 from consyn.resynthesis import DurationClipper
+from consyn.resynthesis import Envelope
 from consyn.base import AudioFrame
 
 
@@ -39,3 +40,12 @@ class DurationClipperTests(unittest.TestCase):
         samples = numpy.arange(20)
         result = self._test_simple(numpy.arange(20), 20, 2, 20, 2)
         self.assertEqual(list(samples), list(result))
+
+
+class EnvelopeTests(unittest.TestCase):
+
+    def test_simple(self):
+        envelope = Envelope()
+        samples = numpy.array([1, 1, 1, 1, 1], dtype="float32")
+        samples, _ = envelope.process(samples, None, None)
+        self.assertEqual(list(samples), [1.0, 0.75, 0.5, 0.25, 0.0])

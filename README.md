@@ -1,6 +1,6 @@
-# Consyn (WIP)
+# Consyn
 
-A [Concatenative synthesis](http://en.wikipedia.org/wiki/Concatenative_synthesis)
+A [concatenative synthesis](http://en.wikipedia.org/wiki/Concatenative_synthesis)
 command line tool.
 
 ## Dependencies

@@ -22,8 +22,9 @@ from clint.textui import progress
 from clint.textui import puts
 from sqlalchemy.exc import ProgrammingError
 
-from .. import models
-from .. import commands
+from ..models import MediaFile
+from ..commands import add_mediafile
+from ..commands import remove_mediafile
 
 
 def command(session):
@@ -42,7 +43,7 @@ def command(session):
                 continue
 
             try:
-                exists = models.MediaFile.by_id_or_name(session, path)
+                exists = MediaFile.by_id_or_name(session, path)
             except ProgrammingError:
                 # FIXME:
                 failures.append("Unicode error {}".format(path))
@@ -51,13 +52,13 @@ def command(session):
 
             if exists:
                 if args["--force"]:
-                    commands.remove_corpus(session, exists)
+                    remove_mediafile(session, exists)
                 else:
                     failures.append("File has already been added".format(path))
                     progress_bar.next()
                     continue
 
-            commands.add_mediafile(
+            add_mediafile(
                 session, path,
                 bufsize=int(args["--bufsize"]),
                 hopsize=int(args["--hopsize"]),

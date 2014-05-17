@@ -5,7 +5,7 @@ import numpy
 from .base import AudioFrame
 from .base import SliceStream
 from .base import StreamFactory
-from ..settings import DTYPE
+from .settings import DTYPE
 
 
 __all__ = [

@@ -4,8 +4,12 @@ import os
 import time
 
 from . import settings
-from . import streams
-from . import models
+from .analysers import SampleAnalyser
+from .loaders import AubioFrameLoader
+from .models import Features
+from .models import MediaFile
+from .models import Unit
+from .slicers import SlicerFactory
 
 
 __all__ = [
@@ -47,8 +51,8 @@ def add_mediafile(session, path, bufsize=settings.BUFSIZE,
     """
 
     results = [{"path": path}] \
-        >> streams.AubioFrameLoader(hopsize=hopsize) \
-        >> streams.SlicerFactory(
+        >> AubioFrameLoader(hopsize=hopsize) \
+        >> SlicerFactory(
             "onsets",
             winsize=bufsize,
             hopsize=hopsize,
@@ -56,9 +60,9 @@ def add_mediafile(session, path, bufsize=settings.BUFSIZE,
             method=method,
             threshold=threshold,
             silence=-90) \
-        >> streams.SampleAnalyser(winsize=bufsize, hopsize=hopsize)
+        >> SampleAnalyser(winsize=bufsize, hopsize=hopsize)
 
-    mediafile = models.MediaFile(duration=0, channels=1)
+    mediafile = MediaFile(duration=0, channels=1)
 
     for index, result in enumerate(results):
         frame = result["frame"]
@@ -73,12 +77,10 @@ def add_mediafile(session, path, bufsize=settings.BUFSIZE,
         if frame.channel + 1 > mediafile.channels:
             mediafile.channels = frame.channel + 1
 
-        unit = models.Unit(mediafile=mediafile,
-                           channel=frame.channel,
-                           position=frame.position,
-                           duration=frame.duration)
+        unit = Unit(mediafile=mediafile, channel=frame.channel,
+                    position=frame.position, duration=frame.duration)
 
-        unit.features = models.Features(unit, result["features"])
+        unit.features = Features(unit, result["features"])
         session.add(unit)
 
     session.add(mediafile)
@@ -94,7 +96,7 @@ def get_mediafile(session, parameter):
     parameter   -- A mediafile ID or a filepath
     """
 
-    mediafile = models.MediaFile.by_id_or_name(session, parameter)
+    mediafile = MediaFile.by_id_or_name(session, parameter)
     if not mediafile:
         mediafile = add_mediafile(session, parameter)
     return mediafile
@@ -108,8 +110,8 @@ def remove_mediafile(session, mediafile):
     mediafile   -- A mediafile object, ID or a filepath
     """
 
-    if not isinstance(mediafile, models.MediaFile):
-        mediafile = models.MediaFile.by_id_or_name(session, mediafile)
+    if not isinstance(mediafile, MediaFile):
+        mediafile = MediaFile.by_id_or_name(session, mediafile)
 
     for feature in mediafile.features:
         session.delete(feature)

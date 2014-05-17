@@ -1,6 +1,7 @@
+# -*- coding: utf-8 -*-
 import os
 import unittest
-from consyn import commands
+from consyn.commands import add_mediafile
 
 from . import SOUND_DIR
 from . import DummySession
@@ -11,7 +12,7 @@ class AddCorpusTests(unittest.TestCase):
     def _test_file(self, name, num_units, samplerate, num_channels, duration):
         path = os.path.join(SOUND_DIR, name)
         session = DummySession()
-        mediafile = commands.add_mediafile(session, path)
+        mediafile = add_mediafile(session, path)
 
         self.assertEqual(len(mediafile.units), num_units)
         self.assertEqual(len(mediafile.features), num_units)

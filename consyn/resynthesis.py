@@ -2,7 +2,7 @@
 import numpy
 
 from .base import ResynthesisStream
-from ..settings import DTYPE
+from .settings import DTYPE
 
 
 __all__ = [

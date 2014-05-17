@@ -1,9 +1,10 @@
+# -*- coding: utf-8 -*-
 import aubio
 import numpy
 
 from .base import Stream
-from ..models import MediaFile
-from ..settings import DTYPE
+from .models import MediaFile
+from .settings import DTYPE
 
 
 __all__ = [

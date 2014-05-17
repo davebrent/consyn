@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import logging
 
 import aubio
@@ -6,7 +7,7 @@ import numpy
 from .base import AudioFrame
 from .base import FrameLoaderStream
 from .base import UnitLoaderStream
-from ..settings import DTYPE
+from .settings import DTYPE
 
 
 __all__ = [

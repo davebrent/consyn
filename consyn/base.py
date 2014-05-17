@@ -84,35 +84,41 @@ class StreamFactory(object):
 
 class FrameLoaderStream(Stream):
 
-    def __init__(self, hopsize=1024, key=lambda pool: pool["path"]):
+    def __init__(self, hopsize=1024, key=lambda context: context["path"]):
         super(FrameLoaderStream, self).__init__()
         self.hopsize = hopsize
         self.key = key
 
     def __call__(self, pipe):
-        for pool in pipe:
-            path = self.key(pool)
+        for context in pipe:
+            path = self.key(context)
             frames = self.read(path)
             for frame in frames:
-                pool["frame"] = frame
-                yield pool
+                context["frame"] = frame
+                yield context
+
+    def read(self, path):
+        raise NotImplementedError("FrameLoaderStreams must implement this")
 
 
 class UnitLoaderStream(Stream):
 
-    def __init__(self, hopsize=1024, key=lambda pool: pool["path"]):
+    def __init__(self, hopsize=1024, key=lambda context: context["path"]):
         super(UnitLoaderStream, self).__init__()
         self.hopsize = hopsize
         self.key = key
 
     def __call__(self, pipe):
-        for pool in pipe:
-            path = self.key(pool)
-            unit = pool["unit"]
+        for context in pipe:
+            path = self.key(context)
+            unit = context["unit"]
             frames = self.read(path, unit)
             for frame in frames:
-                pool["frame"] = frame
-                yield pool
+                context["frame"] = frame
+                yield context
+
+    def read(self, path, unit):
+        raise NotImplementedError("UnitLoaderStreams must implement this")
 
 
 class SliceStream(Stream):
@@ -121,8 +127,8 @@ class SliceStream(Stream):
         super(SliceStream, self).__init__()
 
     def __call__(self, pipe):
-        for pool in pipe:
-            _slice = self.observe(pool["frame"])
+        for context in pipe:
+            _slice = self.observe(context["frame"])
             if _slice is None:
                 continue
             yield {"frame": _slice}
@@ -147,11 +153,11 @@ class SelectionStream(Stream):
         self.session = session
 
     def __call__(self, pipe):
-        for pool in pipe:
-            unit = self.select(pool["unit"])
-            pool["target"] = pool["unit"]
-            pool["unit"] = unit
-            yield pool
+        for context in pipe:
+            unit = self.select(context["unit"])
+            context["target"] = context["unit"]
+            context["unit"] = unit
+            yield context
 
     def select(self, unit):
         raise NotImplementedError("SelectionStreams must implement this")
@@ -163,17 +169,17 @@ class ResynthesisStream(Stream):
         super(ResynthesisStream, self).__init__()
 
     def __call__(self, pipe):
-        for pool in pipe:
+        for context in pipe:
             samples, unit = self.process(
-                pool["frame"].samples,
-                pool["unit"],
-                pool["target"])
+                context["frame"].samples,
+                context["unit"],
+                context["target"])
 
             frame = AudioFrame()
             frame.samples = samples
-            pool["unit"] = unit
-            pool["frame"] = frame
-            yield pool
+            context["unit"] = unit
+            context["frame"] = frame
+            yield context
 
     def process(self, samples, unit, target):
         raise NotImplementedError("ResynthesisStreams must implement this")
@@ -185,9 +191,9 @@ class AnalysisSteam(Stream):
         super(AnalysisSteam, self).__init__()
 
     def __call__(self, pipe):
-        for pool in pipe:
-            pool["features"] = self.analyse(pool["frame"])
-            yield pool
+        for context in pipe:
+            context["features"] = self.analyse(context["frame"])
+            yield context
 
     def analyse(self, samples):
         raise NotImplementedError("AnalysisSteams must return features")

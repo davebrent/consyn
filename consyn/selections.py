@@ -2,8 +2,8 @@
 from sqlalchemy.sql import func
 
 from .base import SelectionStream
-from ..models import Features
-from ..settings import FEATURE_SLOTS
+from .models import Features
+from .settings import FEATURE_SLOTS
 
 
 __all__ = [

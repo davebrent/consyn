@@ -14,9 +14,14 @@ from clint.textui import puts
 from clint.textui import progress
 from sqlalchemy import not_
 
-from .. import streams
-from .. import commands
-from .. import models
+from ..commands import get_mediafile
+from ..loaders import AubioUnitLoader
+from ..models import MediaFile
+from ..resynthesis import DurationClipper
+from ..selections import ManhattenDistanceSelection
+from ..utils import MediaFileSampleBuilder
+from ..utils import MediaFileWriter
+from ..utils import UnitGenerator
 
 
 class ProgressBar(object):
@@ -32,15 +37,15 @@ class ProgressBar(object):
 
 def cmd_mosaic(session, outfile, target, mediafiles):
     [{"mediafile": target.path, "out": outfile}] \
-        >> streams.UnitGenerator(session) \
-        >> streams.ManhattenDistanceSelection(session, mediafiles) \
-        >> streams.AubioUnitLoader(
+        >> UnitGenerator(session) \
+        >> ManhattenDistanceSelection(session, mediafiles) \
+        >> AubioUnitLoader(
             hopsize=2048,
             key=lambda state: state["unit"].mediafile.path) \
-        >> streams.DurationClipper() \
+        >> DurationClipper() \
         >> ProgressBar(len(target.units)) \
-        >> streams.MediaFileSampleBuilder(unit_key="target") \
-        >> streams.MediaFileWriter() \
+        >> MediaFileSampleBuilder(unit_key="target") \
+        >> MediaFileWriter() \
         >> list
 
     return True
@@ -52,13 +57,13 @@ def command(session, verbose=True, force=False):
     if os.path.isfile(args["<outfile>"]) and not args["--force"]:
         puts(colored.red("File already exists"))
     else:
-        target = commands.get_mediafile(session, args["<target>"])
-        mediafiles = [commands.get_mediafile(session, mediafile)
+        target = get_mediafile(session, args["<target>"])
+        mediafiles = [get_mediafile(session, mediafile)
                       for mediafile in args["<mediafiles>"]]
         session.commit()
 
         if len(mediafiles) == 0:
-            mediafiles = session.query(models.MediaFile).filter(not_(
-                models.MediaFile.id == target.id)).all()
+            mediafiles = session.query(MediaFile).filter(not_(
+                MediaFile.id == target.id)).all()
 
         cmd_mosaic(session, args["<outfile>"], target, mediafiles)

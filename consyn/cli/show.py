@@ -12,8 +12,10 @@ import docopt
 import numpy
 import matplotlib.pyplot as plt
 
-from .. import streams
-from .. import models
+from ..utils import UnitGenerator
+from ..utils import MediaFileSampleBuilder
+from ..loaders import AubioUnitLoader
+from ..models import MediaFile
 
 
 TICK_COLOR = "#b9b9b9"
@@ -31,14 +33,14 @@ def samps_to_secs(samples, samplerate):
 def command(session, paths=None, verbose=True, force=False):
     args = docopt.docopt(__doc__)
 
-    mediafile = models.MediaFile.by_id_or_name(session, args["<input>"])
+    mediafile = MediaFile.by_id_or_name(session, args["<input>"])
 
     results = [{"mediafile": mediafile}] \
-        >> streams.UnitGenerator(session) \
-        >> streams.AubioUnitLoader(
+        >> UnitGenerator(session) \
+        >> AubioUnitLoader(
             hopsize=int(args["--framesize"]),
             key=lambda state: state["unit"].mediafile.path) \
-        >> streams.MediaFileSampleBuilder() \
+        >> MediaFileSampleBuilder() \
         >> list
 
     results = results[0]

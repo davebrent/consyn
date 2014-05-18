@@ -3,6 +3,11 @@
 A [concatenative synthesis](http://en.wikipedia.org/wiki/Concatenative_synthesis)
 command line tool.
 
+Consyn takes audio files and slices them into short sections of sound, called
+units. Units are analysed and their audible characteristics, called features,
+stored. Units can then be selected with different algorithms, based on their
+features and concatenated together to create entirely new sounds.
+
 ## Dependencies
 
 * [Python](https://python.org/)

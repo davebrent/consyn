@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Remove mediafiles
 
-usage: consyn remove <mediafiles>...
+usage: consyn rm <mediafiles>...
 
 """
 import docopt

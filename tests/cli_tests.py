@@ -25,4 +25,4 @@ class CLITests(unittest.TestCase):
             os.path.join(SOUND_DIR, "amen-mono.wav")])
 
         commands["ls"](self.session, argv=["ls"])
-        commands["remove"](self.session, argv=["remove", "1", "2"])
+        commands["rm"](self.session, argv=["rm", "1", "2"])

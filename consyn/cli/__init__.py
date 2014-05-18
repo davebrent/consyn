@@ -10,8 +10,7 @@ options:
    -d, --database
 
 commands:
-    add, show, remove, mosaic, ls
-
+    add, show, rm, mosaic, ls
 """
 import sys
 
@@ -23,17 +22,17 @@ from ..models import Base
 from ..settings import DATABASE_URL
 from .add import command as cmd_add
 from .mosaic import command as cmd_mosaic
-from .remove import command as cmd_remove
+from .rm import command as cmd_rm
 from .show import command as cmd_show
 from .ls import command as cmd_ls
 
 
 commands = {
     "add": cmd_add,
-    "show": cmd_show,
     "ls": cmd_ls,
     "mosaic": cmd_mosaic,
-    "remove": cmd_remove
+    "rm": cmd_rm,
+    "show": cmd_show
 }
 
 

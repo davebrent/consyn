@@ -18,9 +18,9 @@ import os
 import unittest
 
 from consyn.loaders import AubioFileLoader
+from consyn.slicers import BeatSlicer
 from consyn.slicers import OnsetSlicer
 from consyn.slicers import RegularSlicer
-from consyn.slicers import BeatSlicer
 from consyn.slicers import SlicerFactory
 
 from . import SOUND_DIR

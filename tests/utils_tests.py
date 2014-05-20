@@ -16,12 +16,11 @@
 import os
 import unittest
 
-
 from consyn.commands import add_mediafile
 from consyn.utils import UnitGenerator
 
-from . import SOUND_DIR
 from . import DummySession
+from . import SOUND_DIR
 
 
 class UnitGeneratorTests(unittest.TestCase):

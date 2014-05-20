@@ -17,10 +17,10 @@ import unittest
 
 import numpy
 
+from consyn.base import AudioFrame
 from consyn.models import Unit
 from consyn.resynthesis import DurationClipper
 from consyn.resynthesis import Envelope
-from consyn.base import AudioFrame
 
 
 class DurationClipperTests(unittest.TestCase):

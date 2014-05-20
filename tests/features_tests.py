@@ -1,11 +1,25 @@
 # -*- coding: utf-8 -*-
+# Copyright (C) 2014, David Poulter
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import math
 import os
 import unittest
 
 import numpy
 
-from consyn.loaders import AubioFrameLoader
+from consyn.loaders import AubioFileLoader
 from consyn.slicers import OnsetSlicer
 from consyn.features import AubioFeatures
 
@@ -23,7 +37,7 @@ class AubioFeaturesTests(unittest.TestCase):
         analyser = AubioFeatures(winsize=bufsize, hopsize=bufsize)
 
         result = [{"path": path}] \
-            >> AubioFrameLoader(hopsize=bufsize) \
+            >> AubioFileLoader(hopsize=bufsize) \
             >> analyser \
             >> list
 
@@ -41,7 +55,7 @@ class AubioFeaturesTests(unittest.TestCase):
         analyser = AubioFeatures(winsize=1024, hopsize=512)
 
         result = [{"path": path}] \
-            >> AubioFrameLoader(hopsize=bufsize) \
+            >> AubioFileLoader(hopsize=bufsize) \
             >> OnsetSlicer(
                 winsize=1024,
                 threshold=0,

@@ -1,22 +1,48 @@
 # -*- coding: utf-8 -*-
-import inspect
+# Copyright (C) 2014, David Poulter
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+"""Base classes for processing media files"""
 import collections
+import inspect
 
 
 __all__ = [
     "AudioFrame",
-    "Stream",
-    "StreamFactory",
-    "FrameLoaderStream",
-    "UnitLoaderStream",
-    "SliceStream",
-    "SelectionStream",
-    "ResynthesisStream",
-    "AnalysisSteam"
+    "Stage",
+    "StageFactory",
+    "FileLoaderStage",
+    "UnitLoaderStage",
+    "SegmentationStage",
+    "SelectionStage",
+    "SynthesisStage",
+    "AnalysisStage"
 ]
 
 
 class AudioFrame(object):
+    """Container for a section of audio being processed.
+
+    Attributes:
+      samples (ndarray): Numpy array containing a section of audio samples
+      samplerate (int): Sampling rate of the media file
+      position (int): Position of samples in the original media file
+      channel (int): The channel the samples belong to
+      path (str): Path of the media file
+      duration (int): Duration of the section of samples
+
+    """
     __slots__ = [
         "samples",
         "samplerate",
@@ -41,7 +67,7 @@ class AudioFrame(object):
         return "<AudioFrame({})>".format(", ".join(values))
 
 
-class Stream(object):
+class Stage(object):
 
     def __init__(self, iterable=None):
         self.iterator = iter(iterable if iterable else [])
@@ -64,28 +90,22 @@ class Stream(object):
             return outpipe(inpipe)
 
     def __rshift__(self, outpipe):
-        return Stream.pipe(self, outpipe)
+        return Stage.pipe(self, outpipe)
 
     def __rrshift__(self, inpipe):
-        return Stream.pipe(inpipe, self)
+        return Stage.pipe(inpipe, self)
 
 
-class StreamFactory(object):
+class FileLoaderStage(Stage):
+    """Base class for generating a stream of AudioFrames from a file path.
 
-    def __new__(cls, name, **kwargs):
-        if name not in cls.objects:
-            raise Exception
-        Class = cls.objects[name]
-        args, _, _, defaults = inspect.getargspec(Class.__init__)
-        args = args[-len(defaults):]
-        kwargs = {key: kwargs[key] for key in args if key in kwargs}
-        return Class(**kwargs)
+    Kwargs:
+      hopsize (int): The size of frames to read
+      key (function): Function for getting a filepath from the current context
 
-
-class FrameLoaderStream(Stream):
-
+    """
     def __init__(self, hopsize=1024, key=lambda context: context["path"]):
-        super(FrameLoaderStream, self).__init__()
+        super(FileLoaderStage, self).__init__()
         self.hopsize = hopsize
         self.key = key
 
@@ -98,13 +118,13 @@ class FrameLoaderStream(Stream):
                 yield context
 
     def read(self, path):
-        raise NotImplementedError("FrameLoaderStreams must implement this")
+        raise NotImplementedError("FileLoaderStages must implement this")
 
 
-class UnitLoaderStream(Stream):
-
+class UnitLoaderStage(Stage):
+    """Base class for generating a stream of AudioFrames from Units"""
     def __init__(self, hopsize=1024, key=lambda context: context["path"]):
-        super(UnitLoaderStream, self).__init__()
+        super(UnitLoaderStage, self).__init__()
         self.hopsize = hopsize
         self.key = key
 
@@ -118,13 +138,13 @@ class UnitLoaderStream(Stream):
                 yield context
 
     def read(self, path, unit):
-        raise NotImplementedError("UnitLoaderStreams must implement this")
+        raise NotImplementedError("UnitLoaderStages must implement this")
 
 
-class SliceStream(Stream):
-
+class SegmentationStage(Stage):
+    """Base class for slicing a stream of AudioFrames"""
     def __init__(self):
-        super(SliceStream, self).__init__()
+        super(SegmentationStage, self).__init__()
 
     def __call__(self, pipe):
         for context in pipe:
@@ -138,17 +158,17 @@ class SliceStream(Stream):
             for _slice in closing:
                 yield {"frame": _slice}
 
-    def observe(self, samples, read, position, channel, samplerate, path):
-        raise NotImplementedError("SliceStreams must implement this")
+    def observe(self, frame):
+        raise NotImplementedError("SegmentationStages must implement this")
 
-    def finish(self, samples, path, channel, samplerate):
+    def finish(self):
         pass
 
 
-class SelectionStream(Stream):
-
+class SelectionStage(Stage):
+    """Base class for unit selection algorithms"""
     def __init__(self, session, mediafiles):
-        super(SelectionStream, self).__init__()
+        super(SelectionStage, self).__init__()
         self.mediafiles = [mediafile.id for mediafile in mediafiles]
         self.session = session
 
@@ -160,13 +180,13 @@ class SelectionStream(Stream):
             yield context
 
     def select(self, unit):
-        raise NotImplementedError("SelectionStreams must implement this")
+        raise NotImplementedError("SelectionStages must implement this")
 
 
-class ResynthesisStream(Stream):
-
+class SynthesisStage(Stage):
+    """Base class for processing units before concatenation"""
     def __init__(self):
-        super(ResynthesisStream, self).__init__()
+        super(SynthesisStage, self).__init__()
 
     def __call__(self, pipe):
         for context in pipe:
@@ -182,13 +202,13 @@ class ResynthesisStream(Stream):
             yield context
 
     def process(self, samples, unit, target):
-        raise NotImplementedError("ResynthesisStreams must implement this")
+        raise NotImplementedError("SynthesisStages must implement this")
 
 
-class AnalysisSteam(Stream):
-
+class AnalysisStage(Stage):
+    """Base class for analysing an AudioFrame"""
     def __init__(self):
-        super(AnalysisSteam, self).__init__()
+        super(AnalysisStage, self).__init__()
 
     def __call__(self, pipe):
         for context in pipe:
@@ -196,4 +216,16 @@ class AnalysisSteam(Stream):
             yield context
 
     def analyse(self, samples):
-        raise NotImplementedError("AnalysisSteams must return features")
+        raise NotImplementedError("AnalysisStages must return features")
+
+
+class StageFactory(object):
+
+    def __new__(cls, name, **kwargs):
+        if name not in cls.objects:
+            raise Exception
+        Class = cls.objects[name]
+        args, _, _, defaults = inspect.getargspec(Class.__init__)
+        args = args[-len(defaults):]
+        kwargs = {key: kwargs[key] for key in args if key in kwargs}
+        return Class(**kwargs)

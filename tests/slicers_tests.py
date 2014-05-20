@@ -1,9 +1,23 @@
 # -*- coding: utf-8 -*-
+# Copyright (C) 2014, David Poulter
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import math
 import os
 import unittest
 
-from consyn.loaders import AubioFrameLoader
+from consyn.loaders import AubioFileLoader
 from consyn.slicers import OnsetSlicer
 from consyn.slicers import RegularSlicer
 from consyn.slicers import BeatSlicer
@@ -18,7 +32,7 @@ class OnsetSlicerTests(unittest.TestCase):
         path = os.path.join(SOUND_DIR, path)
 
         result = [{"path": path}] \
-            >> AubioFrameLoader(hopsize=1024) \
+            >> AubioFileLoader(hopsize=1024) \
             >> OnsetSlicer(
                 winsize=1024,
                 threshold=0,
@@ -47,7 +61,7 @@ class OnsetSlicerTests(unittest.TestCase):
         bufsize = 512
         hopsize = 256
         results = [{"path": os.path.join(SOUND_DIR, "amen-mono.wav")}] \
-            >> AubioFrameLoader(hopsize=hopsize) \
+            >> AubioFileLoader(hopsize=hopsize) \
             >> OnsetSlicer(
                 winsize=bufsize,
                 hopsize=hopsize,
@@ -66,7 +80,7 @@ class RegularSlicerTests(unittest.TestCase):
         path = os.path.join(SOUND_DIR, "amen-mono.wav")
 
         results = [{"path": path}] \
-            >> AubioFrameLoader(hopsize=1024) \
+            >> AubioFileLoader(hopsize=1024) \
             >> RegularSlicer(winsize=2048) \
             >> list
 
@@ -101,7 +115,7 @@ class BeatSlicerTests(unittest.TestCase):
         path = os.path.join(SOUND_DIR, "amen-mono.wav")
 
         results = [{"path": path}] \
-            >> AubioFrameLoader(hopsize=512) \
+            >> AubioFileLoader(hopsize=512) \
             >> BeatSlicer(bpm=150, interval="1/16") \
             >> list
 

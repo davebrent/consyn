@@ -1,4 +1,18 @@
 # -*- coding: utf-8 -*-
+# Copyright (C) 2014, David Poulter
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """Create an audio mosaic
 
 usage: consyn mosaic <outfile> <target> [<mediafiles>...] [options]
@@ -8,17 +22,18 @@ options:
 
 """
 import os
-import docopt
+
 from clint.textui import colored
-from clint.textui import puts
 from clint.textui import progress
+from clint.textui import puts
+import docopt
 from sqlalchemy import not_
 
 from ..commands import get_mediafile
 from ..loaders import AubioUnitLoader
 from ..models import MediaFile
 from ..resynthesis import DurationClipper
-from ..selections import ManhattenDistanceSelection
+from ..selections import NearestNeighbour
 from ..utils import MediaFileSampleBuilder
 from ..utils import MediaFileWriter
 from ..utils import UnitGenerator
@@ -38,7 +53,7 @@ class ProgressBar(object):
 def cmd_mosaic(session, outfile, target, mediafiles):
     [{"mediafile": target.path, "out": outfile}] \
         >> UnitGenerator(session) \
-        >> ManhattenDistanceSelection(session, mediafiles) \
+        >> NearestNeighbour(session, mediafiles) \
         >> AubioUnitLoader(
             hopsize=2048,
             key=lambda state: state["unit"].mediafile.path) \

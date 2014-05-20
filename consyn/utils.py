@@ -1,8 +1,22 @@
 # -*- coding: utf-8 -*-
+# Copyright (C) 2014, David Poulter
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import aubio
 import numpy
 
-from .base import Stream
+from .base import Stage
 from .models import MediaFile
 from .settings import DTYPE
 
@@ -14,7 +28,7 @@ __all__ = [
 ]
 
 
-class UnitGenerator(Stream):
+class UnitGenerator(Stage):
 
     def __init__(self, session):
         super(UnitGenerator, self).__init__()
@@ -31,7 +45,7 @@ class UnitGenerator(Stream):
                 yield pool
 
 
-class MediaFileSampleBuilder(Stream):
+class MediaFileSampleBuilder(Stage):
 
     def __init__(self, unit_key="unit", channels=2):
         super(MediaFileSampleBuilder, self).__init__()
@@ -75,7 +89,7 @@ class MediaFileSampleBuilder(Stream):
                 yield new_pool
 
 
-class MediaFileWriter(Stream):
+class MediaFileWriter(Stage):
 
     def __call__(self, pipe):
         for pool in pipe:

@@ -1,17 +1,32 @@
 # -*- coding: utf-8 -*-
+# Copyright (C) 2014, David Poulter
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+"""Classes for generating streams of AudioFrames"""
 import logging
 
 import aubio
 import numpy
 
 from .base import AudioFrame
-from .base import FrameLoaderStream
-from .base import UnitLoaderStream
+from .base import FileLoaderStage
+from .base import UnitLoaderStage
 from .settings import DTYPE
 
 
 __all__ = [
-    "AubioFrameLoader",
+    "AubioFileLoader",
     "AubioUnitLoader"
 ]
 
@@ -19,7 +34,7 @@ __all__ = [
 logger = logging.getLogger(__name__)
 
 
-class AubioFrameLoader(FrameLoaderStream):
+class AubioFileLoader(FileLoaderStage):
 
     def read(self, path):
         soundfile = aubio.source(path, 0, self.hopsize)
@@ -56,7 +71,7 @@ class AubioFrameLoader(FrameLoaderStream):
         logger.debug("Closing soundfile for {}".format(path))
 
 
-class AubioUnitLoader(UnitLoaderStream):
+class AubioUnitLoader(UnitLoaderStage):
 
     def read(self, path, unit):
         soundfile = aubio.source(path, 0, self.hopsize)

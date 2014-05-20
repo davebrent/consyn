@@ -1,14 +1,28 @@
 # -*- coding: utf-8 -*-
+# Copyright (C) 2014, David Poulter
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import os
 
 from sqlalchemy import Column
 from sqlalchemy import ForeignKey
 from sqlalchemy import Integer
-from sqlalchemy import UnicodeText
 from sqlalchemy import Table
+from sqlalchemy import UnicodeText
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.orm import relationship
+from sqlalchemy.orm.exc import NoResultFound
 
 from .settings import FEATURE_SLOTS
 from .settings import FEATURE_TYPE
@@ -18,14 +32,16 @@ Base = declarative_base()
 
 
 class MediaFile(Base):
-    """
-    id          -- Unique ID.
-    path        -- Absolute path to the file.
-    channels    -- The number of audio channels in the file.
-    samplerate  -- The samplerate of the audio file.
-    duration    -- Duration of the file in samples
-    """
+    """A file containing audio samples.
 
+    Attributes:
+      id (int): Unique ID.
+      path (str): Absolute path to the file.
+      channels (int): The number of audio channels in the file.
+      samplerate (int): The samplerate of the audio file.
+      duration (int): Duration of the file in samples
+
+    """
     __tablename__ = "corpi"
     id = Column(Integer, primary_key=True)
     path = Column(UnicodeText(255), nullable=False, unique=True, index=True)
@@ -64,13 +80,16 @@ class MediaFile(Base):
 
 
 class Unit(Base):
-    """
-    mediafile   -- The mediafile that this unit is related to.
-    channel     -- The channel that the unit belongs to in the mediafile
-    position    -- The sample position that the unit belongs to in the channel
-    duration    -- Duration in samples
-    """
+    """A slice of audio in a mediafile.
 
+    Attributes:
+      mediafile (MediaFile): The mediafile that this unit is related to.
+      features (Features): Extracted audio features.
+      channel (int): The channel that the unit belongs to in the mediafile
+      position (int): The sample position that the unit belongs to
+      duration (int): Duration in samples
+
+    """
     __tablename__ = "units"
     id = Column(Integer, primary_key=True)
     mediafile_id = Column(Integer, ForeignKey("corpi.id"))
@@ -90,14 +109,16 @@ class Unit(Base):
 
 
 class Features(Base):
-    """
-    id          -- Unique identifier for the set of features.
-    unit        -- The unit the set of features describes.
-    mediafile   -- The mediafile the set of features is part of.
-    feat_*      -- The value of the feature.
-    label_*     -- The human readable name of the feature.
-    """
+    """The extracted audible characteristics of a unit of sound.
 
+    Attributes:
+      id (int): Unique identifier for the set of features.
+      unit (Unit): The unit the set of features describes.
+      mediafile (MediaFile): The mediafile the set of features is part of.
+      feat_* (float): The value of the feature.
+      label_* (str): The human readable name of the feature.
+
+    """
     __table__ = Table(
         "features", Base.metadata,
         Column("id", Integer, primary_key=True),

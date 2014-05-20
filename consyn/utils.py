@@ -23,8 +23,8 @@ from .settings import DTYPE
 
 __all__ = [
     "UnitGenerator",
-    "MediaFileSampleBuilder",
-    "MediaFileWriter"
+    "Concatenate",
+    "AubioWriter"
 ]
 
 
@@ -45,10 +45,10 @@ class UnitGenerator(Stage):
                 yield pool
 
 
-class MediaFileSampleBuilder(Stage):
+class Concatenate(Stage):
 
     def __init__(self, unit_key="unit", channels=2):
-        super(MediaFileSampleBuilder, self).__init__()
+        super(Concatenate, self).__init__()
         self.unit_key = unit_key
         self.channels = channels
         self.buffers = {}
@@ -89,7 +89,7 @@ class MediaFileSampleBuilder(Stage):
                 yield new_pool
 
 
-class MediaFileWriter(Stage):
+class AubioWriter(Stage):
 
     def __call__(self, pipe):
         for pool in pipe:

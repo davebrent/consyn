@@ -33,9 +33,10 @@ from ..commands import get_mediafile
 from ..loaders import AubioUnitLoader
 from ..models import MediaFile
 from ..resynthesis import DurationClipper
+from ..resynthesis import Envelope
 from ..selections import NearestNeighbour
-from ..utils import MediaFileSampleBuilder
-from ..utils import MediaFileWriter
+from ..utils import Concatenate
+from ..utils import AubioWriter
 from ..utils import UnitGenerator
 
 
@@ -58,9 +59,10 @@ def cmd_mosaic(session, outfile, target, mediafiles):
             hopsize=2048,
             key=lambda state: state["unit"].mediafile.path) \
         >> DurationClipper() \
+        >> Envelope() \
         >> ProgressBar(len(target.units)) \
-        >> MediaFileSampleBuilder(unit_key="target") \
-        >> MediaFileWriter() \
+        >> Concatenate(unit_key="target") \
+        >> AubioWriter() \
         >> list
 
     return True

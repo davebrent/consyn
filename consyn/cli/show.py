@@ -29,7 +29,7 @@ import numpy
 
 from ..loaders import AubioUnitLoader
 from ..models import MediaFile
-from ..utils import MediaFileSampleBuilder
+from ..utils import Concatenate
 from ..utils import UnitGenerator
 
 
@@ -55,7 +55,7 @@ def command(session, argv=None):
         >> AubioUnitLoader(
             hopsize=int(args["--framesize"]),
             key=lambda state: state["unit"].mediafile.path) \
-        >> MediaFileSampleBuilder() \
+        >> Concatenate() \
         >> list
 
     results = results[0]

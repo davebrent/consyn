@@ -16,7 +16,11 @@
 import os
 import unittest
 
+from consyn.base import AudioFrame
 from consyn.commands import add_mediafile
+from consyn.models import MediaFile
+from consyn.models import Unit
+from consyn.utils import Concatenate
 from consyn.utils import UnitGenerator
 
 from . import DummySession
@@ -38,3 +42,21 @@ class UnitGeneratorTests(unittest.TestCase):
 
     def test_mono(self):
         self._test_iter_amount("amen-mono.wav", 10)
+
+
+class ConcatenateTests(unittest.TestCase):
+
+    def test_internal_buffer(self):
+        """Test initialization of internal buffer at the correct size"""
+        concatenate = Concatenate()
+        list(concatenate([
+            {"frame": AudioFrame(samples=[3] * 10),
+             "unit": Unit(channel=0, position=25, duration=10),
+             "mediafile": MediaFile(duration=50, channels=2, path="test.wav")}
+        ]))
+
+        self.assertEqual(concatenate.end, {})
+        self.assertEqual(concatenate.counts["test.wav"], 1)
+        self.assertEqual(concatenate.buffers["test.wav"].shape, (2, 50))
+        self.assertEqual(
+            list(concatenate.buffers["test.wav"][0][25:35]), [3] * 10)

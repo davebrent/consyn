@@ -55,6 +55,19 @@ class Concatenate(Stage):
         self.counts = {}
         self.end = {}
 
+    def clip_duration(self, samples, duration):
+        actual = samples.shape[0]
+        tmp = numpy.zeros(duration, dtype=DTYPE)
+
+        if actual < duration:
+            tmp[0:actual] = samples
+        elif actual > duration:
+            tmp[0:duration] = samples[0:duration]
+        else:
+            tmp = samples
+
+        return tmp
+
     def __call__(self, pipe):
         for pool in pipe:
             mediafile = pool["mediafile"]
@@ -70,6 +83,7 @@ class Concatenate(Stage):
                     (mediafile.channels, mediafile.duration),
                     dtype=DTYPE)
 
+            samples = self.clip_duration(samples, target.duration)
             buff = self.buffers[mediafile.path]
             buff[target.channel][
                 target.position:target.position + target.duration] = samples

@@ -16,6 +16,8 @@
 import os
 import unittest
 
+import numpy
+
 from consyn.base import AudioFrame
 from consyn.commands import add_mediafile
 from consyn.models import MediaFile
@@ -50,7 +52,7 @@ class ConcatenateTests(unittest.TestCase):
         """Test initialization of internal buffer at the correct size"""
         concatenate = Concatenate()
         list(concatenate([
-            {"frame": AudioFrame(samples=[3] * 10),
+            {"frame": AudioFrame(samples=numpy.array([3] * 10)),
              "unit": Unit(channel=0, position=25, duration=10),
              "mediafile": MediaFile(duration=50, channels=2, path="test.wav")}
         ]))
@@ -60,3 +62,25 @@ class ConcatenateTests(unittest.TestCase):
         self.assertEqual(concatenate.buffers["test.wav"].shape, (2, 50))
         self.assertEqual(
             list(concatenate.buffers["test.wav"][0][25:35]), [3] * 10)
+
+    def _test_clipper(self, samples, target_dur):
+        concatenate = Concatenate()
+        result = concatenate.clip_duration(samples, target_dur)
+        self.assertEqual(result.shape[0], target_dur)
+        return result
+
+    def test_less_than(self):
+        """Test clipping samples less than target duration"""
+        result = self._test_clipper(numpy.arange(18), 20)
+        self.assertEqual(list(numpy.arange(18)) + [0, 0], list(result))
+
+    def test_more_than(self):
+        """Test clipping samples more than target duration"""
+        result = self._test_clipper(numpy.arange(25), 20)
+        self.assertEqual(list(numpy.arange(20)), list(result))
+
+    def test_equal(self):
+        """Test clipping samples equal to target duration"""
+        samples = numpy.arange(20)
+        result = self._test_clipper(numpy.arange(20), 20)
+        self.assertEqual(list(samples), list(result))

@@ -16,29 +16,11 @@
 import numpy
 
 from .base import SynthesisStage
-from .settings import DTYPE
 
 
 __all__ = [
-    "DurationClipper",
     "Envelope"
 ]
-
-
-class DurationClipper(SynthesisStage):
-
-    def process(self, samples, unit, target):
-        duration = samples.shape[0]
-        tmp = numpy.zeros(target.duration, dtype=DTYPE)
-
-        if duration < target.duration:
-            tmp[0:duration] = samples
-        elif duration > target.duration:
-            tmp[0:target.duration] = samples[0:target.duration]
-        else:
-            tmp = samples
-
-        return tmp, unit
 
 
 class Envelope(SynthesisStage):

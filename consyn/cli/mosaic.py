@@ -32,7 +32,6 @@ from sqlalchemy import not_
 from ..commands import get_mediafile
 from ..loaders import AubioUnitLoader
 from ..models import MediaFile
-from ..resynthesis import DurationClipper
 from ..resynthesis import Envelope
 from ..selections import NearestNeighbour
 from ..utils import Concatenate
@@ -58,7 +57,6 @@ def cmd_mosaic(session, outfile, target, mediafiles):
         >> AubioUnitLoader(
             hopsize=2048,
             key=lambda state: state["unit"].mediafile.path) \
-        >> DurationClipper() \
         >> Envelope() \
         >> ProgressBar(len(target.units)) \
         >> Concatenate(unit_key="target") \

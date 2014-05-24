@@ -63,7 +63,6 @@ def add_mediafile(session, path, bufsize=settings.BUFSIZE,
       path (str): Path to the audiofile, can be relative or absolute.
       bufsize (int): Buffersize to use for reading and analysis.
       hopsize (int): Hop size to use for analysis.
-      minsize (int): Minimum size of a unit.
       method (str): The method to use for onset detection
       threshold (float): The threshold to use for onset detection
 
@@ -74,7 +73,6 @@ def add_mediafile(session, path, bufsize=settings.BUFSIZE,
             "onsets",
             winsize=bufsize,
             hopsize=hopsize,
-            min_slice_size=minsize,
             method=method,
             threshold=threshold,
             silence=-90) \

@@ -26,7 +26,7 @@ from .settings import DTYPE
 __all__ = ["SlicerFactory"]
 
 
-class SliceBuffer(object):
+class Segmentor(object):
 
     def __init__(self, channel, detector):
         self.channel = channel
@@ -40,14 +40,13 @@ class SliceBuffer(object):
         values = ["{}={}".format(key, getattr(self, key)) for key in keys
                   if hasattr(self, key)]
         values.append("buffer={}".format(self.buffer.shape[0]))
-        return "<SliceBuffer({})>".format(", ".join(values))
+        return "<Segmentor({})>".format(", ".join(values))
 
 
 class BaseSlicer(SegmentationStage):
 
-    def __init__(self, min_slice_size=0):
+    def __init__(self):
         super(BaseSlicer, self).__init__()
-        self.min_slice_size = min_slice_size
         self.samplerate = None
         self.channels = {}
 
@@ -57,38 +56,39 @@ class BaseSlicer(SegmentationStage):
         self.samplerate = frame.samplerate
 
         if frame.channel not in self.channels:
-            self.channels[frame.channel] = SliceBuffer(
+            self.channels[frame.channel] = Segmentor(
                 frame.channel, self.get_detector())
 
-        _slice = self.channels[frame.channel]
-        _slice.position = frame.position + frame.duration
-        _slice.buffer = numpy.concatenate((_slice.buffer, frame.samples))
+        segment = self.channels[frame.channel]
+        segment.position = frame.position + frame.duration
+        segment.buffer = numpy.concatenate((segment.buffer, frame.samples))
 
-        if _slice.detector(frame.samples):
-            position = self.get_onset_position(_slice)
-            length = len(_slice.onsets)
-            if length == 0 or (position - _slice.onsets[0] >
-                               self.min_slice_size):
-                _slice.onsets.append(position)
-            if len(_slice.onsets) == 2:
-                output = self.flush(_slice)
+        if segment.detector(frame.samples):
+            position = self.get_onset_position(segment)
+            segment.onsets.append(position)
+            if len(segment.onsets) == 2:
+                output = self.flush(segment)
+        elif frame.position == 0:
+            segment.onsets.append(0)
 
         return output
 
     def finish(self):
         for channel in self.channels:
-            _slice = self.channels[channel]
-            _slice.onsets.append(_slice.position)
+            segment = self.channels[channel]
 
-            samples = _slice.buffer
+            if len(segment.onsets) == 0:
+                segment.onsets.append(segment.position)
+
+            samples = segment.buffer
             duration = samples.shape[0]
-            position = _slice.onsets[0]
+            position = segment.onsets[0]
 
             frame = AudioFrame()
             frame.samplerate = self.samplerate
             frame.path = self.path
             frame.samples = samples
-            frame.channel = _slice.channel
+            frame.channel = segment.channel
             frame.position = position
             frame.duration = duration
             yield frame
@@ -96,22 +96,22 @@ class BaseSlicer(SegmentationStage):
     def get_detector(self):
         raise NotImplementedError()
 
-    def get_onset_position(self, _slice):
+    def get_onset_position(self, segment):
         raise NotImplementedError()
 
-    def flush(self, _slice):
-        duration = _slice.onsets[1] - _slice.onsets[0]
-        samples = _slice.buffer[:duration]
-        position = _slice.onsets[0]
+    def flush(self, segment):
+        duration = segment.onsets[1] - segment.onsets[0]
+        samples = segment.buffer[:duration]
+        position = segment.onsets[0]
 
-        _slice.buffer = _slice.buffer[duration:]
-        _slice.onsets = [_slice.onsets[1]]
+        segment.buffer = segment.buffer[duration:]
+        segment.onsets = [segment.onsets[1]]
 
         frame = AudioFrame()
         frame.samplerate = self.samplerate
         frame.path = self.path
         frame.samples = samples
-        frame.channel = _slice.channel
+        frame.channel = segment.channel
         frame.position = position
         frame.duration = duration
         return frame
@@ -134,8 +134,8 @@ class OnsetSlicer(BaseSlicer):
 
     """
     def __init__(self, winsize=1024, threshold=0.3, method="default",
-                 hopsize=512, min_slice_size=0, silence=-90):
-        super(OnsetSlicer, self).__init__(min_slice_size=min_slice_size)
+                 hopsize=512, silence=-90):
+        super(OnsetSlicer, self).__init__()
         self.winsize = winsize
         self.hopsize = hopsize
         self.threshold = threshold
@@ -149,8 +149,8 @@ class OnsetSlicer(BaseSlicer):
         detector.set_silence(self.silence)
         return detector
 
-    def get_onset_position(self, _slice):
-        return _slice.detector.get_last()
+    def get_onset_position(self, segment):
+        return segment.detector.get_last()
 
 
 class RegularDetector(object):
@@ -183,14 +183,14 @@ class RegularSlicer(BaseSlicer):
 
     """
     def __init__(self, winsize=1024):
-        super(RegularSlicer, self).__init__(min_slice_size=0)
+        super(RegularSlicer, self).__init__()
         self.winsize = winsize
 
     def get_detector(self):
         return RegularDetector(self.winsize)
 
-    def get_onset_position(self, _slice):
-        return _slice.detector.get_last()
+    def get_onset_position(self, segment):
+        return segment.detector.get_last()
 
 
 class BeatSlicer(BaseSlicer):
@@ -202,7 +202,7 @@ class BeatSlicer(BaseSlicer):
 
     """
     def __init__(self, bpm=120, interval="1/16"):
-        super(BeatSlicer, self).__init__(min_slice_size=0)
+        super(BeatSlicer, self).__init__()
         self.bpm = bpm
         self.interval = interval
 
@@ -223,8 +223,8 @@ class BeatSlicer(BaseSlicer):
         seconds = ((float(60) / float(bpm)) * 4) * interval
         return int(round(seconds * samplerate))
 
-    def get_onset_position(self, _slice):
-        return _slice.detector.get_last()
+    def get_onset_position(self, segment):
+        return segment.detector.get_last()
 
 
 class SlicerFactory(StageFactory):

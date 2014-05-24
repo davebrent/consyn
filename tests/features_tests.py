@@ -59,7 +59,6 @@ class AubioFeaturesTests(unittest.TestCase):
             >> OnsetSlicer(
                 winsize=1024,
                 threshold=0,
-                min_slice_size=0,
                 method="default") \
             >> analyser \
             >> list

@@ -22,7 +22,6 @@ options:
    -f --force                     Overwrite file(s) if already exists.
    -b --bufsize <bufsize>         Buffer size in samples [default: 1024].
    -h --hopsize <hopsize>         Hopsize in samples [default: 512].
-   --minsize <unit-minsize>       Minimum unit size in samples [default: 0].
    --onset-threshold <threshold>  Aubio onset threshold [default: 0.3].
    --onset-method <method>        Aubio onset threshold [default: default].
 
@@ -76,7 +75,6 @@ def command(session, argv=None):
                 session, path,
                 bufsize=int(args["--bufsize"]),
                 hopsize=int(args["--hopsize"]),
-                minsize=int(args["--minsize"]),
                 method=args["--onset-method"],
                 threshold=float(args["--onset-threshold"]))
             session.commit()

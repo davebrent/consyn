@@ -17,9 +17,13 @@ import os
 import unittest
 
 import numpy
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 
 from consyn.base import AudioFrame
 from consyn.commands import add_mediafile
+from consyn.loaders import AubioUnitLoader
+from consyn.models import Base
 from consyn.models import MediaFile
 from consyn.models import Unit
 from consyn.utils import Concatenate
@@ -47,6 +51,23 @@ class UnitGeneratorTests(unittest.TestCase):
 
 
 class ConcatenateTests(unittest.TestCase):
+
+    def test_concatenate_file(self):
+        engine = create_engine('sqlite:///:memory:')
+        Base.metadata.create_all(engine)
+        Session = sessionmaker(bind=engine)
+        session = Session()
+
+        path = os.path.join(SOUND_DIR, "hot_tamales.wav")
+        mediafile = add_mediafile(session, path)
+        session.flush()
+
+        mediafile = [{"mediafile": mediafile}] \
+            >> UnitGenerator(session) \
+            >> AubioUnitLoader(
+                key=lambda state: state["unit"].mediafile.path) \
+            >> Concatenate() \
+            >> list
 
     def test_internal_buffer(self):
         """Test initialization of internal buffer at the correct size"""

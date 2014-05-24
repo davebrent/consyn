@@ -37,7 +37,6 @@ class OnsetSlicerTests(unittest.TestCase):
             >> OnsetSlicer(
                 winsize=1024,
                 threshold=0,
-                min_slice_size=0,
                 method="default") \
             >> list
 
@@ -192,12 +191,11 @@ class SlicerFactoryTests(unittest.TestCase):
         self.assertEqual(slicer.winsize, 9999)
 
         slicer = SlicerFactory("onsets", winsize=9999, threshold=0,
-                               method="energy", min_slice_size=0)
+                               method="energy")
         self.assertTrue(isinstance(slicer, OnsetSlicer))
         self.assertEqual(slicer.winsize, 9999)
         self.assertEqual(slicer.threshold, 0)
         self.assertEqual(slicer.method, "energy")
-        self.assertEqual(slicer.min_slice_size, 0)
 
         slicer = SlicerFactory("beats", bpm=90, interval="1/16")
         self.assertEqual(slicer.bpm, 90)

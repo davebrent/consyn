@@ -22,8 +22,8 @@ options:
    -f --force                     Overwrite file(s) if already exists.
    -b --bufsize <bufsize>         Buffer size in samples [default: 1024].
    -h --hopsize <hopsize>         Hopsize in samples [default: 512].
-   --minsize <unit-minsize>       Minimum unit size in samples [default: 2048].
-   --onset-threshold <threshold>  Aubio onset threshold [default: 0].
+   --minsize <unit-minsize>       Minimum unit size in samples [default: 0].
+   --onset-threshold <threshold>  Aubio onset threshold [default: 0.3].
    --onset-method <method>        Aubio onset threshold [default: default].
 
 """
@@ -51,6 +51,8 @@ def command(session, argv=None):
 
     try:
         for path in set(paths):
+            if path in seen:
+                continue
             if not os.path.isfile(path):
                 failures.append("File does not exist {}".format(path))
                 progress_bar.next()
@@ -78,7 +80,7 @@ def command(session, argv=None):
                 hopsize=int(args["--hopsize"]),
                 minsize=int(args["--minsize"]),
                 method=args["--onset-method"],
-                threshold=int(args["--onset-threshold"]))
+                threshold=float(args["--onset-threshold"]))
             session.commit()
             succeses.append(path)
             progress_bar.next()

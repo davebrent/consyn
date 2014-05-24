@@ -107,13 +107,14 @@ class AubioWriter(Stage):
 
     def __call__(self, pipe):
         for pool in pipe:
-            framesize = 1024
+            framesize = 2048
             mediafile = pool["mediafile"]
             buff = pool["buffer"]
             outfile = pool["out"]
 
             sink = aubio.sink(outfile, 0, mediafile.channels)
-            out_samples = numpy.array_split(buff, framesize, axis=1)
+            out_samples = numpy.array_split(
+                buff, int(float(mediafile.duration) / int(framesize)), axis=1)
 
             for frame in out_samples:
                 amount = frame[0].shape[0]

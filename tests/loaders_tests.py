@@ -45,6 +45,21 @@ class FileLoaderTests(unittest.TestCase):
 
         self.assertEqual(previous, 68)
 
+    def test_duration_equal_samples_length(self):
+        """Test duration is always equal to length of samples array"""
+        path = os.path.join(SOUND_DIR, "cant_let_you_use_me.wav")
+        results = [{"path": path}] >> AubioFileLoader()
+        for res in results:
+            frame = res["frame"]
+            self.assertEqual(frame.duration, frame.samples.shape[0])
+
+    def test_channels_zero_indexed(self):
+        """Test channels are zero indexed"""
+        path = os.path.join(SOUND_DIR, "amen-stereo.wav")
+        results = [{"path": path}] >> AubioFileLoader(hopsize=1024)
+        channels = set([res["frame"].channel for res in results])
+        self.assertEqual(channels, set([0, 1]))
+
 
 class UnitLoaderTests(unittest.TestCase):
 

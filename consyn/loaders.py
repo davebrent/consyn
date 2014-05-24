@@ -46,6 +46,9 @@ class AubioFileLoader(FileLoaderStage):
         while True:
             channels, read = soundfile.do_multi()
 
+            if read == 0:
+                break
+
             for channel, samples in enumerate(channels):
                 if channel not in positions:
                     positions[channel] = 0
@@ -54,7 +57,7 @@ class AubioFileLoader(FileLoaderStage):
                 frame.samplerate = soundfile.samplerate
                 frame.position = positions[channel]
                 frame.channel = channel
-                frame.samples = samples
+                frame.samples = samples[:read]
                 frame.duration = read
                 frame.index = index
                 frame.path = path

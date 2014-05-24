@@ -35,10 +35,17 @@ class SliceBuffer(object):
         self.onsets = []
         self.position = 0
 
+    def __repr__(self):
+        keys = ['position', 'onsets', 'channel']
+        values = ["{}={}".format(key, getattr(self, key)) for key in keys
+                  if hasattr(self, key)]
+        values.append("buffer={}".format(self.buffer.shape[0]))
+        return "<SliceBuffer({})>".format(", ".join(values))
+
 
 class BaseSlicer(SegmentationStage):
 
-    def __init__(self, min_slice_size=8192):
+    def __init__(self, min_slice_size=0):
         super(BaseSlicer, self).__init__()
         self.min_slice_size = min_slice_size
         self.samplerate = None
@@ -72,9 +79,19 @@ class BaseSlicer(SegmentationStage):
         for channel in self.channels:
             _slice = self.channels[channel]
             _slice.onsets.append(_slice.position)
-            frame = self.flush(_slice)
-            if frame.duration > 0:
-                yield frame
+
+            samples = _slice.buffer
+            duration = samples.shape[0]
+            position = _slice.onsets[0]
+
+            frame = AudioFrame()
+            frame.samplerate = self.samplerate
+            frame.path = self.path
+            frame.samples = samples
+            frame.channel = _slice.channel
+            frame.position = position
+            frame.duration = duration
+            yield frame
 
     def get_detector(self):
         raise NotImplementedError()

@@ -1,0 +1,14 @@
+#N canvas 583 275 191 175 10;
+#X obj 20 25 bng 15 250 50 0 empty empty empty 17 7 0 10 -262144 -1
+-1;
+#X obj 20 55 openpanel;
+#X obj 20 95 soundfiler;
+#X obj 20 115 print;
+#X obj 90 55 table sound;
+#X msg 20 75 read -resize \$1 sound;
+#X floatatom 60 116 16 0 0 0 - - -;
+#X connect 0 0 1 0;
+#X connect 1 0 5 0;
+#X connect 2 0 3 0;
+#X connect 2 0 6 0;
+#X connect 5 0 2 0;

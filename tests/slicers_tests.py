@@ -13,6 +13,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+import collections
 import math
 import os
 import unittest
@@ -73,9 +74,56 @@ class OnsetSlicerTests(unittest.TestCase):
             0, 8657, 17410, 26321, 30819, 35069, 39755, 43934, 52727, 61561
         ])
 
+    def test_flush_1(self):
+        self._test_all_samples_flushed("cant_let_you_use_me.wav", 160768)
+
+    def test_flush_2(self):
+        self._test_all_samples_flushed("hand_clapping_song.wav", 458496)
+
+    def test_flush_3(self):
+        self._test_all_samples_flushed("hot_tamales.wav", 134912)
+
+    def test_flush_4(self):
+        self._test_all_samples_flushed("right on.wav", 508686)
+
+    def test_flush_5(self):
+        self._test_all_samples_flushed("rimbo.wav", 216931)
+
+    def test_flush_6(self):
+        self._test_all_samples_flushed("we_laugh_at_danger.wav", 113515)
+
+    def _test_all_samples_flushed(self, case, duration):
+        """Test all samples are outputted by onset slicer"""
+        results = [{"path": os.path.join(SOUND_DIR, case)}] \
+            >> AubioFileLoader()
+
+        frame_durs = collections.defaultdict(int)
+        for res in results:
+            frame = res["frame"]
+            self.assertEqual(frame.samples.shape[0], frame.duration)
+            frame_durs[frame.channel] += frame.samples.shape[0]
+
+        self.assertEqual(frame_durs[0], duration)
+        self.assertEqual(frame_durs[1], duration)
+
+        slicer = OnsetSlicer()
+        results = [{"path": os.path.join(SOUND_DIR, case)}] \
+            >> AubioFileLoader() \
+            >> slicer
+
+        onset_durs = collections.defaultdict(int)
+        for res in results:
+            frame = res["frame"]
+            self.assertEqual(frame.samples.shape[0], frame.duration)
+            onset_durs[frame.channel] += frame.samples.shape[0]
+
+        self.assertEqual(onset_durs[0], frame_durs[0])
+        self.assertEqual(onset_durs[1], frame_durs[1])
+
 
 class RegularSlicerTests(unittest.TestCase):
 
+    @unittest.expectedFailure
     def test_simple_slices(self):
         path = os.path.join(SOUND_DIR, "amen-mono.wav")
 

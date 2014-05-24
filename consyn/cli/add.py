@@ -51,8 +51,6 @@ def command(session, argv=None):
 
     try:
         for path in set(paths):
-            if path in seen:
-                continue
             if not os.path.isfile(path):
                 failures.append("File does not exist {}".format(path))
                 progress_bar.next()

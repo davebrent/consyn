@@ -99,7 +99,7 @@ class Unit(Base):
     features = relationship("Features", uselist=False, backref="unit")
 
     def __repr__(self):
-        keys = ["channel", "position", "duration"]
+        keys = ["id", "channel", "position", "duration"]
         values = ["{}={}".format(key, getattr(self, key)) for key in keys]
         values.insert(0, "mediafile={}".format(self.mediafile.name))
         return "<Unit({})>".format(", ".join(values))

@@ -14,33 +14,28 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import os
-import unittest
 
 import numpy
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 
 from consyn.base import AudioFrame
 from consyn.commands import add_mediafile
 from consyn.loaders import AubioUnitLoader
-from consyn.models import Base
 from consyn.models import MediaFile
 from consyn.models import Unit
 from consyn.utils import Concatenate
 from consyn.utils import UnitGenerator
 
-from . import DummySession
+from . import DatabaseTests
 from . import SOUND_DIR
 
 
-class UnitGeneratorTests(unittest.TestCase):
+class UnitGeneratorTests(DatabaseTests):
 
     def _test_iter_amount(self, name, num):
-        session = DummySession()
         path = os.path.join(SOUND_DIR, name)
-        mediafile = add_mediafile(session, path, threshold=0)
+        mediafile = add_mediafile(self.session, path, threshold=0)
         initial = [{"mediafile": mediafile}]
-        results = initial >> UnitGenerator(session) >> list
+        results = initial >> UnitGenerator(self.session) >> list
         self.assertEqual(len(results), num)
 
     def test_stereo(self):
@@ -50,20 +45,15 @@ class UnitGeneratorTests(unittest.TestCase):
         self._test_iter_amount("amen-mono.wav", 10)
 
 
-class ConcatenateTests(unittest.TestCase):
+class ConcatenateTests(DatabaseTests):
 
     def test_concatenate_file(self):
-        engine = create_engine('sqlite:///:memory:')
-        Base.metadata.create_all(engine)
-        Session = sessionmaker(bind=engine)
-        session = Session()
-
         path = os.path.join(SOUND_DIR, "hot_tamales.wav")
-        mediafile = add_mediafile(session, path)
-        session.flush()
+        mediafile = add_mediafile(self.session, path)
+        self.session.flush()
 
         mediafile = [{"mediafile": mediafile}] \
-            >> UnitGenerator(session) \
+            >> UnitGenerator(self.session) \
             >> AubioUnitLoader(
                 key=lambda state: state["unit"].mediafile.path) \
             >> Concatenate() \

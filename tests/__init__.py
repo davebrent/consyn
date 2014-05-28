@@ -14,11 +14,22 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import os
+import unittest
+
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+
+from consyn.models import Base
+
 
 SOUND_DIR = os.path.abspath(
     os.path.join(os.path.dirname(__file__), "sounds"))
 
 
-class DummySession(object):
-    def add(self, obj):
-        pass
+class DatabaseTests(unittest.TestCase):
+
+    def setUp(self):
+        engine = create_engine('sqlite:///:memory:')
+        Base.metadata.create_all(engine)
+        Session = sessionmaker(bind=engine)
+        self.session = Session()

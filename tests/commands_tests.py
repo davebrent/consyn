@@ -14,20 +14,18 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import os
-import unittest
 
 from consyn.commands import add_mediafile
 
 from . import SOUND_DIR
-from . import DummySession
+from . import DatabaseTests
 
 
-class AddMediaFileTests(unittest.TestCase):
+class AddMediaFileTests(DatabaseTests):
 
     def _test_file(self, name, num_units, samplerate, num_channels, duration):
         path = os.path.join(SOUND_DIR, name)
-        session = DummySession()
-        mediafile = add_mediafile(session, path)
+        mediafile = add_mediafile(self.session, path)
 
         self.assertEqual(len(mediafile.units), num_units)
         self.assertEqual(len(mediafile.features), num_units)

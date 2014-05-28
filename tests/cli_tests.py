@@ -14,23 +14,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import os
-import unittest
-
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 
 from consyn.cli import commands
-from consyn.models import Base
+
 from . import SOUND_DIR
+from . import DatabaseTests
 
 
-class CLITests(unittest.TestCase):
-
-    def setUp(self):
-        engine = create_engine('sqlite:///:memory:')
-        Base.metadata.create_all(engine)
-        Session = sessionmaker(bind=engine)
-        self.session = Session()
+class CLITests(DatabaseTests):
 
     def test_simple(self):
         commands["add"](self.session, argv=[

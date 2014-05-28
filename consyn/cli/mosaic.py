@@ -33,6 +33,7 @@ from ..commands import get_mediafile
 from ..loaders import AubioUnitLoader
 from ..models import MediaFile
 from ..resynthesis import Envelope
+from ..resynthesis import TimeStretch
 from ..selections import NearestNeighbour
 from ..utils import Concatenate
 from ..utils import AubioWriter
@@ -58,6 +59,7 @@ def cmd_mosaic(session, outfile, target, mediafiles):
             hopsize=2048,
             key=lambda state: state["unit"].mediafile.path) \
         >> Envelope() \
+        >> TimeStretch(factor=0.25) \
         >> ProgressBar(len(target.units)) \
         >> Concatenate(unit_key="target") \
         >> AubioWriter() \

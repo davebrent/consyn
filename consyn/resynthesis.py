@@ -19,7 +19,8 @@ from .base import SynthesisStage
 
 
 __all__ = [
-    "Envelope"
+    "Envelope",
+    "TimeStretch"
 ]
 
 
@@ -30,3 +31,52 @@ class Envelope(SynthesisStage):
         envelope = numpy.linspace(1.0, 0.0, num=duration)
         samples *= envelope
         return samples, unit
+
+
+class TimeStretch(SynthesisStage):
+
+    def __init__(self, factor=None, winsize=1024, overlap=4):
+        super(TimeStretch, self).__init__()
+        self.factor = factor
+        self.winsize = winsize
+        self.overlap = overlap
+
+    def process(self, samples, unit, target):
+        if self.factor is None:
+            factor = float(target.duration) / float(unit.duration)
+        else:
+            factor = self.factor
+
+        hopsize = int(float(self.winsize) / float(self.overlap))
+        duration = len(samples)
+
+        phi = numpy.zeros(self.winsize)
+        out = numpy.zeros(self.winsize, dtype=complex)
+        sigout = numpy.zeros(duration / factor + self.winsize)
+        window = numpy.hanning(self.winsize)
+
+        amp = max(samples)
+        pos1 = 0
+        pos2 = 0
+
+        while pos2 < duration - (self.winsize + hopsize):
+            position = int(pos2)
+
+            spec1 = numpy.fft.fft(window * samples[
+                position:position + self.winsize])
+
+            spec2 = numpy.fft.fft(window * samples[
+                position + hopsize:position + self.winsize + hopsize])
+
+            phi += (numpy.angle(spec2) - numpy.angle(spec1))
+
+            out.real = numpy.cos(phi)
+            out.imag = numpy.sin(phi)
+
+            sigout[pos1:pos1 + self.winsize] += (
+                window * numpy.fft.ifft(abs(spec2) * out)).real
+            pos1 += hopsize
+            pos2 += hopsize * factor
+
+        sigout = numpy.array(amp * sigout / max(sigout), dtype='float32')
+        return sigout, unit

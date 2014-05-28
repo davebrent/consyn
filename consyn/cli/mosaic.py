@@ -59,7 +59,7 @@ def cmd_mosaic(session, outfile, target, mediafiles):
             hopsize=2048,
             key=lambda state: state["unit"].mediafile.path) \
         >> Envelope() \
-        >> TimeStretch(factor=0.25) \
+        >> TimeStretch() \
         >> ProgressBar(len(target.units)) \
         >> Concatenate(unit_key="target") \
         >> AubioWriter() \

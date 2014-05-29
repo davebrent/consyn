@@ -43,12 +43,13 @@ from ..utils import UnitGenerator
 class ProgressBar(object):
 
     def __init__(self, size):
-        self.progress_bar = progress.bar(range(size - 1))
+        self.progress_bar = progress.bar(range(size))
 
     def __call__(self, pipe):
         for pool in pipe:
             self.progress_bar.next()
             yield pool
+        self.progress_bar.next()
 
 
 def cmd_mosaic(session, outfile, target, mediafiles):
@@ -58,8 +59,8 @@ def cmd_mosaic(session, outfile, target, mediafiles):
         >> AubioUnitLoader(
             hopsize=2048,
             key=lambda state: state["unit"].mediafile.path) \
-        >> Envelope() \
         >> TimeStretch() \
+        >> Envelope() \
         >> ProgressBar(len(target.units)) \
         >> Concatenate(unit_key="target") \
         >> AubioWriter() \

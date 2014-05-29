@@ -52,8 +52,6 @@ class Concatenate(Stage):
         self.unit_key = unit_key
         self.channels = channels
         self.buffers = {}
-        self.counts = {}
-        self.end = {}
 
     def clip_duration(self, samples, duration):
         actual = samples.shape[0]
@@ -74,11 +72,7 @@ class Concatenate(Stage):
             target = pool[self.unit_key]
             samples = pool["frame"].samples
 
-            if mediafile.path in self.end:
-                continue
-
             if mediafile.path not in self.buffers:
-                self.counts[mediafile.path] = 0
                 self.buffers[mediafile.path] = numpy.zeros(
                     (mediafile.channels, mediafile.duration),
                     dtype=DTYPE)
@@ -87,20 +81,17 @@ class Concatenate(Stage):
             buff = self.buffers[mediafile.path]
             buff[target.channel][
                 target.position:target.position + target.duration] = samples
-            self.counts[mediafile.path] += 1
 
-            if self.counts[mediafile.path] == (len(mediafile.units) - 1) and \
-                    mediafile.path not in self.end:
-                self.end[mediafile.path] = True
-                new_pool = {
-                    "mediafile": pool["mediafile"],
-                    "buffer": buff
-                }
+        new_pool = {
+            "mediafile": pool["mediafile"],
+            "buffer": buff
+        }
 
-                if pool.get("out"):
-                    new_pool["out"] = pool["out"]
+        # TODO: Remove
+        if pool.get("out"):
+            new_pool["out"] = pool["out"]
 
-                yield new_pool
+        yield new_pool
 
 
 class AubioWriter(Stage):

@@ -26,9 +26,10 @@ def _slice_array(arr, bufsize=1024, hopsize=512):
     position = 0
     duration = arr.shape[0]
     while True:
+        if position >= duration:
+            break
         if position + bufsize >= duration:
             yield arr[position:]
-            break
         else:
             yield arr[position:position + bufsize]
         position += hopsize
@@ -85,6 +86,9 @@ class AubioFeatures(AnalysisStage):
 
             for method in self.methods:
                 features[method] = self.descriptors[method](fftgrain)[0]
+
+        if len(features) == 0:
+            return None
 
         for method in self.methods:
             features[method] = numpy.mean(features[method])

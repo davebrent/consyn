@@ -212,8 +212,10 @@ class AnalysisStage(Stage):
 
     def __call__(self, pipe):
         for context in pipe:
-            context["features"] = self.analyse(context["frame"])
-            yield context
+            features = self.analyse(context["frame"])
+            if features is not None:
+                context["features"] = features
+                yield context
 
     def analyse(self, samples):
         raise NotImplementedError("AnalysisStages must return features")

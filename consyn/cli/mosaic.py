@@ -67,7 +67,7 @@ def cmd_mosaic(session, outfile, target, mediafiles):
               help="Overwrite file(s) if already exists.")
 @click.argument("output")
 @click.argument("target")
-@click.argument("mediafiles", nargs=-1)
+@click.argument("mediafiles", nargs=-1, required=False)
 @configurator
 def command(config, output, target, mediafiles, force):
     if os.path.isfile(output) and not force:

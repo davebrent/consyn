@@ -13,20 +13,13 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-"""Show onsets and features for a file
-
-usage: consyn show <input> [options]
-
-options:
-   -f --framesize <framesize>   Framesize used to read samples [default: 2048].
-
-"""
 import collections
 
-import docopt
+import click
 import matplotlib.pyplot as plt
 import numpy
 
+from . import configurator
 from ..loaders import AubioUnitLoader
 from ..models import MediaFile
 from ..utils import Concatenate
@@ -45,15 +38,18 @@ def samps_to_secs(samples, samplerate):
     return float(samples) / samplerate
 
 
-def command(session, argv=None):
-    args = docopt.docopt(__doc__, argv=argv)
-
-    mediafile = MediaFile.by_id_or_name(session, args["<input>"])
+@click.command("show", short_help="Show a mediafile and its onsets.")
+@click.option("--hopsize", default=1024,
+              help="Hopsize used to read samples.")
+@click.argument("mediafile")
+@configurator
+def command(config, mediafile, hopsize):
+    mediafile = MediaFile.by_id_or_name(config.session, mediafile)
 
     results = [{"mediafile": mediafile}] \
-        >> UnitGenerator(session) \
+        >> UnitGenerator(config.session) \
         >> AubioUnitLoader(
-            hopsize=int(args["--framesize"]),
+            hopsize=hopsize,
             key=lambda state: state["unit"].mediafile.path) \
         >> Concatenate() \
         >> list
@@ -70,7 +66,7 @@ def command(session, argv=None):
         axes = [axes]
 
     for index, ax in enumerate(axes):
-        ax.grid(True, color=GRID_COLOR, linestyle='solid')
+        ax.grid(True, color=GRID_COLOR, linestyle="solid")
         ax.set_axisbelow(True)
 
         for label in ax.get_xticklabels():

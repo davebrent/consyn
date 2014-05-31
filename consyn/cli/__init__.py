@@ -14,55 +14,55 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-"""A concatenative synthesis command line tool.
-
-usage: consyn [options] <command> [<args>...]
-
-options:
-   -h, --help
-   -v, --version
-   -d, --database
-
-commands:
-    add, show, rm, mosaic, ls
-"""
-import sys
-
-from docopt import docopt
+import click
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from ..models import Base
 from ..settings import DATABASE_URL
-from .add import command as cmd_add
-from .ls import command as cmd_ls
-from .mosaic import command as cmd_mosaic
-from .rm import command as cmd_rm
-from .show import command as cmd_show
 
 
-commands = {
-    "add": cmd_add,
-    "ls": cmd_ls,
-    "mosaic": cmd_mosaic,
-    "rm": cmd_rm,
-    "show": cmd_show
-}
+__all__ = ["configurator", "main"]
 
 
-def main():
-    args = docopt(__doc__, help=False)
-    params = sys.argv[1:]
+COMMANDS = ["add", "ls", "rm", "mosaic", "show"]
 
-    if args["<command>"] not in commands:
-        print(__doc__)
-    else:
-        db_url = DATABASE_URL
-        if args["--database"]:
-            db_url = args["--database"]
-            params.pop(0)
 
-        engine = create_engine(db_url)
-        Base.metadata.create_all(engine)
-        Session = sessionmaker(bind=engine)
-        commands[args["<command>"]](Session(), argv=params)
+class Config(object):
+
+    def __init__(self):
+        self.database = DATABASE_URL
+        self.debug = False
+        self.verbose = True
+        self.session = None
+
+
+configurator = click.make_pass_decorator(Config, ensure=True)
+
+
+@click.group()
+@click.option("--debug", default=True, is_flag=True,
+              help="Enables debug mode.")
+@click.option("--verbose", default=True, is_flag=True,
+              help="Enables verbose mode.")
+@click.option("--database", default=DATABASE_URL,
+              help="Path to database.")
+@configurator
+def main(config, debug, verbose, database=DATABASE_URL):
+    """A concatenative synthesis command line tool."""
+    engine = create_engine(database)
+    Base.metadata.create_all(engine)
+    Session = sessionmaker(bind=engine)
+
+    config.debug = debug
+    config.database = database
+    config.session = Session()
+
+
+for cmd in COMMANDS:
+    try:
+        module = __import__('consyn.cli.' + cmd.encode('ascii', 'replace'),
+                            None, None, 1)
+        main.add_command(getattr(module, 'command'))
+    except ImportError:
+        continue

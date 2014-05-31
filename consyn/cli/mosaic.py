@@ -13,30 +13,23 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-"""Create an audio mosaic
-
-usage: consyn mosaic <outfile> <target> [<mediafiles>...] [options]
-
-options:
-   -f, --force              Overwrite file(s) if already exists.
-
-"""
 import os
 
+import click
 from clint.textui import colored
 from clint.textui import progress
 from clint.textui import puts
-import docopt
 from sqlalchemy import not_
 
+from . import configurator
 from ..commands import get_mediafile
 from ..loaders import AubioUnitLoader
 from ..models import MediaFile
 from ..resynthesis import Envelope
 from ..resynthesis import TimeStretch
 from ..selections import NearestNeighbour
-from ..utils import Concatenate
 from ..utils import AubioWriter
+from ..utils import Concatenate
 from ..utils import UnitGenerator
 
 
@@ -69,19 +62,24 @@ def cmd_mosaic(session, outfile, target, mediafiles):
     return True
 
 
-def command(session, argv=None):
-    args = docopt.docopt(__doc__, argv=argv)
-
-    if os.path.isfile(args["<outfile>"]) and not args["--force"]:
+@click.command("mosaic", short_help="Create an audio mosaic.")
+@click.option("--force", is_flag=True, default=False,
+              help="Overwrite file(s) if already exists.")
+@click.argument("output")
+@click.argument("target")
+@click.argument("mediafiles", nargs=-1)
+@configurator
+def command(config, output, target, mediafiles, force):
+    if os.path.isfile(output) and not force:
         puts(colored.red("File already exists"))
     else:
-        target = get_mediafile(session, args["<target>"])
-        mediafiles = [get_mediafile(session, mediafile)
-                      for mediafile in args["<mediafiles>"]]
-        session.commit()
+        target = get_mediafile(config.session, target)
+        mediafiles = [get_mediafile(config.session, mediafile)
+                      for mediafile in mediafiles]
+        config.session.commit()
 
         if len(mediafiles) == 0:
-            mediafiles = session.query(MediaFile).filter(not_(
+            mediafiles = config.session.query(MediaFile).filter(not_(
                 MediaFile.id == target.id)).all()
 
-        cmd_mosaic(session, args["<outfile>"], target, mediafiles)
+        cmd_mosaic(config.session, output, target, mediafiles)

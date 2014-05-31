@@ -13,35 +13,32 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-"""List files already added
-
-usage: consyn ls
-
-"""
 import os
 
+import click
 from clint.textui import colored
 from clint.textui import puts
-from docopt import docopt
 
+from . import configurator
 from ..models import MediaFile
 
 
-def command(session, argv=None):
-    docopt(__doc__, argv=argv)
-    col1 = len(str(session.query(MediaFile).count()))
+@click.command("ls", short_help="List mediafiles in a database.")
+@configurator
+def command(config):
+    col1 = len(str(config.session.query(MediaFile).count()))
     if col1 < 2:
         col1 = 2
     col2 = 5
-    for mediafile in session.query(MediaFile).all():
+    for mediafile in config.session.query(MediaFile).all():
         places = len(str(len(mediafile.units)))
         if col2 < places:
             col2 = places
 
     puts("{0:{col1}} {1:{col2}} {2}".format(
-        "Id", "Units", "Name", col1=col1, col2=col2))
+         "Id", "Units", "Name", col1=col1, col2=col2))
 
-    for mediafile in session.query(MediaFile).all():
+    for mediafile in config.session.query(MediaFile).all():
         name = mediafile.path
         if len(name) > (80 - col1 - 2 - col2):
             name = name[0:(77 - col1 - 2 - col2)] + "..."

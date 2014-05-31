@@ -13,96 +13,92 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-"""Add files
-
-usage: consyn add <input>... [options]
-
-options:
-   -v --verbose                   Verbose messages
-   -f --force                     Overwrite file(s) if already exists.
-   -b --bufsize <bufsize>         Buffer size in samples [default: 1024].
-   -h --hopsize <hopsize>         Hopsize in samples [default: 512].
-   --onset-threshold <threshold>  Aubio onset threshold [default: 0.3].
-   --onset-method <method>        Aubio onset threshold [default: default].
-
-"""
 import os
 
+import click
 from clint.textui import colored
 from clint.textui import indent
 from clint.textui import progress
 from clint.textui import puts
-from docopt import docopt
 from sqlalchemy.exc import ProgrammingError
 
+from . import configurator
 from ..commands import add_mediafile
 from ..commands import remove_mediafile
 from ..models import MediaFile
 
 
-def command(session, argv=None):
-    args = docopt(__doc__, argv=argv)
-    paths = args["<input>"]
+@click.command("add", short_help="Add a mediafile to a database.")
+@click.option("--force", is_flag=True, default=False,
+              help="Overwrite file(s) if already exists.")
+@click.option("--bufsize", default=1024,
+              help="Buffer size in samples.")
+@click.option("--hopsize", default=512,
+              help="Hopsize in samples.")
+@click.option("--onset-threshold", default=0.3,
+              help="Aubio onset threshold.")
+@click.option("--onset-method", default="default",
+              help="Aubio onset threshold.")
+@click.argument('files', nargs=-1)
+@configurator
+def command(config, files, force, bufsize, hopsize, onset_threshold,
+            onset_method):
 
-    progress_bar = progress.bar(range(len(paths)))
+    progress_bar = progress.bar(range(len(files)))
     failures = []
     succeses = []
 
-    try:
-        for path in set(paths):
-            if not os.path.isfile(path):
-                failures.append("File does not exist {}".format(path))
-                progress_bar.next()
-                continue
-
-            try:
-                exists = MediaFile.by_id_or_name(session, path)
-            except ProgrammingError:
-                # FIXME:
-                failures.append("Unicode error {}".format(path))
-                progress_bar.next()
-                continue
-
-            if exists:
-                if args["--force"]:
-                    remove_mediafile(session, exists)
-                else:
-                    failures.append("File has already been added".format(path))
-                    progress_bar.next()
-                    continue
-
-            add_mediafile(
-                session, path,
-                bufsize=int(args["--bufsize"]),
-                hopsize=int(args["--hopsize"]),
-                method=args["--onset-method"],
-                threshold=float(args["--onset-threshold"]))
-            session.commit()
-            succeses.append(path)
+    for path in set(files):
+        if not os.path.isfile(path):
+            failures.append("File does not exist {}".format(path))
             progress_bar.next()
+            continue
 
         try:
+            exists = MediaFile.by_id_or_name(config.session, path)
+        except ProgrammingError:
+            # FIXME:
+            failures.append("Unicode error {}".format(path))
             progress_bar.next()
-        except StopIteration:
-            pass
-    except:
-        # TODO: Log errors,
+            continue
+
+        if exists:
+            if force:
+                remove_mediafile(config.session, exists)
+            else:
+                failures.append("File has already been added".format(path))
+                progress_bar.next()
+                continue
+
+        add_mediafile(
+            config.session, path,
+            bufsize=bufsize,
+            hopsize=hopsize,
+            method=onset_method,
+            threshold=onset_threshold)
+        config.session.commit()
+        succeses.append(path)
+        progress_bar.next()
+
+    try:
+        progress_bar.next()
+    except StopIteration:
         pass
-    finally:
-        print("")
 
-        if len(succeses) > 0:
-            puts(colored.green("Successfully added {} files".format(
-                len(succeses))))
-            if args["--verbose"]:
-                with indent(2):
-                    for path in succeses:
-                        puts(colored.green(path))
+    print("")
 
-        if len(failures) > 0:
-            puts(colored.red("Failed to add {} files".format(
-                len(failures))))
-            if args["--verbose"]:
-                with indent(2):
-                    for path in succeses:
-                        puts(colored.red(path))
+    if len(succeses) > 0:
+        puts(colored.green("Successfully added {} files".format(
+            len(succeses))))
+        if config.verbose:
+            with indent(2):
+                for path in succeses:
+                    puts(colored.green(path))
+
+    if len(failures) > 0:
+        puts(colored.red("Failed to add {} files".format(
+            len(failures))))
+        if config.verbose:
+            with indent(2):
+                for path in succeses:
+                    puts(colored.red(path))

@@ -13,31 +13,27 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-"""Remove mediafiles
-
-usage: consyn rm <mediafiles>...
-
-"""
+import click
 from clint.textui import colored
 from clint.textui import puts
-import docopt
 
+from . import configurator
 from ..commands import remove_mediafile
 from ..models import MediaFile
 
 
-def command(session, argv=None):
-    args = docopt.docopt(__doc__, argv=argv)
-    mediafiles = args["<mediafiles>"]
+@click.command("rm", short_help="Remove mediafles from a database.")
+@click.argument("files", nargs=-1)
+@configurator
+def command(config, files):
+    if len(files) == 1 and files[0] == "all":
+        files = [mediafile.id for mediafile in
+                 config.session.query(MediaFile).all()]
 
-    if len(mediafiles) == 1 and mediafiles[0] == "all":
-        mediafiles = [mediafile.id
-                      for mediafile in session.query(MediaFile).all()]
-
-    for param in mediafiles:
-        mediafile = MediaFile.by_id_or_name(session, param)
+    for param in files:
+        mediafile = MediaFile.by_id_or_name(config.session, param)
         if not mediafile:
             puts(colored.red("MediaFile {} not found".format(param)))
             continue
 
-        remove_mediafile(session, mediafile)
+        remove_mediafile(config.session, mediafile)

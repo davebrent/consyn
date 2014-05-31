@@ -42,7 +42,7 @@ class MediaFile(Base):
       duration (int): Duration of the file in samples
 
     """
-    __tablename__ = "corpi"
+    __tablename__ = "mediafiles"
     id = Column(Integer, primary_key=True)
     path = Column(UnicodeText(255), nullable=False, unique=True, index=True)
     channels = Column(Integer, nullable=False)
@@ -92,7 +92,7 @@ class Unit(Base):
     """
     __tablename__ = "units"
     id = Column(Integer, primary_key=True)
-    mediafile_id = Column(Integer, ForeignKey("corpi.id"))
+    mediafile_id = Column(Integer, ForeignKey("mediafiles.id"))
     channel = Column(Integer, nullable=False)
     position = Column(Integer, nullable=False)
     duration = Column(Integer, nullable=False)
@@ -123,7 +123,7 @@ class Features(Base):
         "features", Base.metadata,
         Column("id", Integer, primary_key=True),
         Column("unit_id", Integer, ForeignKey("units.id")),
-        Column("mediafile_id", Integer, ForeignKey("corpi.id")),
+        Column("mediafile_id", Integer, ForeignKey("mediafiles.id")),
         *list((Column("feat_{}".format(feature), FEATURE_TYPE, nullable=True,
                default=0)
               for feature in range(FEATURE_SLOTS))) +

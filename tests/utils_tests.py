@@ -68,8 +68,6 @@ class ConcatenateTests(DatabaseTests):
              "mediafile": MediaFile(duration=50, channels=2, path="test.wav")}
         ]))
 
-        self.assertEqual(concatenate.end, {})
-        self.assertEqual(concatenate.counts["test.wav"], 1)
         self.assertEqual(concatenate.buffers["test.wav"].shape, (2, 50))
         self.assertEqual(
             list(concatenate.buffers["test.wav"][0][25:35]), [3] * 10)

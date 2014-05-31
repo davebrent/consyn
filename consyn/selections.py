@@ -43,11 +43,11 @@ class NearestNeighbour(SelectionStage):
             dist_func += func.abs(getattr(Features, col_name) -
                                   getattr(target_features, col_name))
 
-        feature = self.session.query(Features) \
+        pk = self.session.query(Features.unit_id) \
             .filter(Features.mediafile_id.in_(self.mediafiles)) \
             .order_by(dist_func).limit(1).one()
 
-        return feature.unit
+        return self.session.query(Unit).get(pk)
 
 
 class RandomUnit(SelectionStage):

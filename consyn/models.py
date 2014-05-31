@@ -153,3 +153,12 @@ class Features(Base):
         for index in range(FEATURE_SLOTS):
             yield (getattr(self, "label_{}".format(index)),
                    getattr(self, "feat_{}".format(index)))
+
+    def __repr__(self):
+        values = []
+        for index in range(FEATURE_SLOTS):
+            values.append("{}={}".format(
+                getattr(self, "label_{}".format(index)),
+                getattr(self, "feat_{}".format(index))
+            ))
+        return "<Features({})>".format(", ".join(values))

@@ -87,9 +87,6 @@ class AubioFeatures(AnalysisStage):
             for method in self.methods:
                 features[method] = self.descriptors[method](fftgrain)[0]
 
-        if len(features) == 0:
-            return None
-
         for method in self.methods:
             features[method] = numpy.mean(features[method])
 

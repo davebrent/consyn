@@ -229,11 +229,15 @@ class AnalysisStage(Stage):
 
 class StageFactory(object):
 
-    def __new__(cls, name, **kwargs):
+    def __new__(cls, name, *args, **kwargs):
         if name not in cls.objects:
             raise Exception
+
         Class = cls.objects[name]
-        args, _, _, defaults = inspect.getargspec(Class.__init__)
-        args = args[-len(defaults):]
-        kwargs = {key: kwargs[key] for key in args if key in kwargs}
-        return Class(**kwargs)
+        kargs, _, _, defaults = inspect.getargspec(Class.__init__)
+
+        if defaults is not None:
+            kargs = kargs[-len(defaults):]
+
+        kwargs = {key: kwargs[key] for key in kargs if key in kwargs}
+        return Class(*args, **kwargs)

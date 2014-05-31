@@ -27,7 +27,7 @@ from ..loaders import AubioUnitLoader
 from ..models import MediaFile
 from ..resynthesis import Envelope
 from ..resynthesis import TimeStretch
-from ..selections import NearestNeighbour
+from ..selections import SelectionFactory
 from ..utils import AubioWriter
 from ..utils import Concatenate
 from ..utils import UnitGenerator
@@ -45,31 +45,16 @@ class ProgressBar(object):
         self.progress_bar.next()
 
 
-def cmd_mosaic(session, outfile, target, mediafiles):
-    [{"mediafile": target.path, "out": outfile}] \
-        >> UnitGenerator(session) \
-        >> NearestNeighbour(session, mediafiles) \
-        >> AubioUnitLoader(
-            hopsize=2048,
-            key=lambda state: state["unit"].mediafile.path) \
-        >> TimeStretch() \
-        >> Envelope() \
-        >> ProgressBar(len(target.units)) \
-        >> Concatenate(unit_key="target") \
-        >> AubioWriter() \
-        >> list
-
-    return True
-
-
 @click.command("mosaic", short_help="Create an audio mosaic.")
 @click.option("--force", is_flag=True, default=False,
               help="Overwrite file(s) if already exists.")
+@click.option("--selection", default="nearest",
+              help="Unit selection algorithm")
 @click.argument("output")
 @click.argument("target")
 @click.argument("mediafiles", nargs=-1, required=False)
 @configurator
-def command(config, output, target, mediafiles, force):
+def command(config, output, target, mediafiles, force, selection):
     if os.path.isfile(output) and not force:
         puts(colored.red("File already exists"))
     else:
@@ -82,4 +67,15 @@ def command(config, output, target, mediafiles, force):
             mediafiles = config.session.query(MediaFile).filter(not_(
                 MediaFile.id == target.id)).all()
 
-        cmd_mosaic(config.session, output, target, mediafiles)
+        [{"mediafile": target.path, "out": output}] \
+            >> UnitGenerator(config.session) \
+            >> SelectionFactory(selection, config.session, mediafiles) \
+            >> AubioUnitLoader(
+                hopsize=2048,
+                key=lambda state: state["unit"].mediafile.path) \
+            >> TimeStretch() \
+            >> Envelope() \
+            >> ProgressBar(len(target.units)) \
+            >> Concatenate(unit_key="target") \
+            >> AubioWriter() \
+            >> list

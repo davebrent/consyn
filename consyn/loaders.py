@@ -45,7 +45,6 @@ class AubioFileCache(object):
             soundfile = aubio.source(path, 0, hopsize)
             self._soundfiles[path] = soundfile
             self._counts[path] = 0
-            print path
         if len(self._soundfiles) > OPEN_FILE_MAX:
             minimum = float("inf")
             min_path = None

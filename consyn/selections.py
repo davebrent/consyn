@@ -14,15 +14,20 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """Unit selection algorithms"""
+import random
 from sqlalchemy.sql import func
 
 from .base import SelectionStage
+from .base import StageFactory
 from .models import Features
+from .models import Unit
 from .settings import FEATURE_SLOTS
 
 
 __all__ = [
     "NearestNeighbour",
+    "RandomUnit",
+    "SelectionFactory"
 ]
 
 
@@ -43,3 +48,17 @@ class NearestNeighbour(SelectionStage):
             .order_by(dist_func).limit(1).one()
 
         return feature.unit
+
+
+class RandomUnit(SelectionStage):
+
+    def select(self, unit):
+        count = self.session.query(Unit).count()
+        return self.session.query(Unit).get(random.randint(1, count - 1))
+
+
+class SelectionFactory(StageFactory):
+    objects = {
+        "nearest": NearestNeighbour,
+        "random": RandomUnit
+    }

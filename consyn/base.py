@@ -117,6 +117,9 @@ class FileLoaderStage(Stage):
                 context["frame"] = frame
                 yield context
 
+        if hasattr(self, "close"):
+            self.close()
+
     def read(self, path):
         raise NotImplementedError("FileLoaderStages must implement this")
 
@@ -136,6 +139,9 @@ class UnitLoaderStage(Stage):
             for frame in frames:
                 context["frame"] = frame
                 yield context
+
+        if hasattr(self, "close"):
+            self.close()
 
     def read(self, path, unit):
         raise NotImplementedError("UnitLoaderStages must implement this")

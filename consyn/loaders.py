@@ -23,6 +23,7 @@ from .base import AudioFrame
 from .base import FileLoaderStage
 from .base import UnitLoaderStage
 from .settings import DTYPE
+from .settings import OPEN_FILE_MAX
 
 
 __all__ = [
@@ -34,10 +35,43 @@ __all__ = [
 logger = logging.getLogger(__name__)
 
 
-class AubioFileLoader(FileLoaderStage):
+class AubioFileCache(object):
+
+    _soundfiles = {}
+    _counts = {}
+
+    def open(self, path, hopsize):
+        if path not in self._soundfiles:
+            soundfile = aubio.source(path, 0, hopsize)
+            self._soundfiles[path] = soundfile
+            self._counts[path] = 0
+            print path
+        if len(self._soundfiles) > OPEN_FILE_MAX:
+            minimum = float("inf")
+            min_path = None
+            for path in self._counts:
+                if minimum > self._counts[path]:
+                    minimum = self._counts[path]
+                    min_path = path
+            self._close(min_path)
+
+        self._counts[path] += 1
+        return self._soundfiles[path]
+
+    def close(self):
+        for path in self._soundfiles.keys():
+            self._close(path)
+
+    def _close(self, path):
+        self._soundfiles[path].close()
+        del self._soundfiles[path]
+        del self._counts[path]
+
+
+class AubioFileLoader(FileLoaderStage, AubioFileCache):
 
     def read(self, path):
-        soundfile = aubio.source(path, 0, self.hopsize)
+        soundfile = self.open(path, self.hopsize)
         soundfile.seek(0)
 
         index = 0
@@ -69,15 +103,13 @@ class AubioFileLoader(FileLoaderStage):
             if read < soundfile.hop_size:
                 break
 
-        soundfile.close()
-        del soundfile
         logger.debug("Closing soundfile for {}".format(path))
 
 
-class AubioUnitLoader(UnitLoaderStage):
+class AubioUnitLoader(UnitLoaderStage, AubioFileCache):
 
     def read(self, path, unit):
-        soundfile = aubio.source(path, 0, self.hopsize)
+        soundfile = self.open(path, self.hopsize)
         soundfile.seek(unit.position)
 
         pos = 0
@@ -105,7 +137,5 @@ class AubioUnitLoader(UnitLoaderStage):
         frame.index = 0
         frame.path = path
 
-        soundfile.close()
-        del soundfile
         logger.debug("Closing soundfile for {}".format(path))
         yield frame

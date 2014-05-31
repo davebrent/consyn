@@ -28,5 +28,6 @@ FEATURE_TYPE = Float
 DATABASE_PATH = os.path.join(ROOT_DIR, "consyn.sqlite")
 DATABASE_URL = "sqlite:///{}".format(DATABASE_PATH)
 DTYPE = "float32"
+OPEN_FILE_MAX = 50
 
 logging.config.fileConfig(os.path.join(ROOT_DIR, "development.ini"))

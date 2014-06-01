@@ -76,7 +76,7 @@ def command(config, output, target, mediafiles, force, selection):
                 key=lambda state: state["unit"].mediafile.path) \
             >> TimeStretch() \
             >> Envelope() \
-            >> ProgressBar(len(target.units)) \
+            >> ProgressBar(target.units.count()) \
             >> Concatenate(unit_key="target") \
             >> AubioWriter(output) \
             >> list

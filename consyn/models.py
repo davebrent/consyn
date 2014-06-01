@@ -50,8 +50,8 @@ class MediaFile(Base):
     samplerate = Column(Integer, nullable=False)
     duration = Column(Integer, nullable=False)
 
-    units = relationship("Unit", backref="mediafile")
-    features = relationship("Features", backref="mediafile")
+    units = relationship("Unit", backref="mediafile", lazy="dynamic")
+    features = relationship("Features", backref="mediafile", lazy="dynamic")
 
     @property
     def name(self):
@@ -73,7 +73,7 @@ class MediaFile(Base):
     def __repr__(self):
         keys = ["id", "name", "duration", "channels", "samplerate"]
         values = ["{}={}".format(key, getattr(self, key)) for key in keys]
-        values.append("units={}".format(len(self.units)))
+        values.append("units={}".format(self.units.count()))
         return "<MediaFile({})>".format(", ".join(values))
 
     def __str__(self):

@@ -28,8 +28,8 @@ class AddMediaFileTests(DatabaseTests):
         path = os.path.join(SOUND_DIR, name)
         mediafile = add_mediafile(self.session, path)
 
-        self.assertEqual(len(mediafile.units), num_units)
-        self.assertEqual(len(mediafile.features), num_units)
+        self.assertEqual(mediafile.units.count(), num_units)
+        self.assertEqual(mediafile.features.count(), num_units)
         self.assertEqual(mediafile.samplerate, samplerate)
         self.assertEqual(mediafile.channels, num_channels)
         self.assertEqual(mediafile.path, path)

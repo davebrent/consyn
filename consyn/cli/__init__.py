@@ -43,7 +43,7 @@ configurator = click.make_pass_decorator(Config, ensure=True)
 
 
 @click.group()
-@click.option("--debug", default=True, is_flag=True,
+@click.option("--debug", default=False, is_flag=True,
               help="Enables debug mode.")
 @click.option("--verbose", default=False, is_flag=True,
               help="Enables verbose mode.")

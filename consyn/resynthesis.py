@@ -80,5 +80,11 @@ class TimeStretch(SynthesisStage):
             pos1 += hopsize
             pos2 += hopsize * factor
 
-        sigout = numpy.array(amp * sigout / max(sigout), dtype="float32")
+        max_samp = max(sigout)
+
+        if max_samp != 0:
+            sigout = numpy.array(amp * sigout / max_samp, dtype="float32")
+        else:
+            sigout = numpy.array(amp * sigout, dtype="float32")
+
         return sigout, unit

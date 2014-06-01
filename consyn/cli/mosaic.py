@@ -68,7 +68,7 @@ def command(config, output, target, mediafiles, force, selection):
             mediafiles = config.session.query(MediaFile).filter(not_(
                 MediaFile.id == target.id)).all()
 
-        [{"mediafile": target.path, "out": output}] \
+        [{"mediafile": target.path}] \
             >> UnitGenerator(config.session) \
             >> SelectionFactory(selection, config.session, mediafiles) \
             >> AubioUnitLoader(
@@ -78,5 +78,5 @@ def command(config, output, target, mediafiles, force, selection):
             >> Envelope() \
             >> ProgressBar(len(target.units)) \
             >> Concatenate(unit_key="target") \
-            >> AubioWriter() \
+            >> AubioWriter(output) \
             >> list

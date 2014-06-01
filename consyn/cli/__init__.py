@@ -35,7 +35,7 @@ class Config(object):
     def __init__(self):
         self.database = DATABASE_URL
         self.debug = False
-        self.verbose = True
+        self.verbose = False
         self.session = None
 
 
@@ -45,7 +45,7 @@ configurator = click.make_pass_decorator(Config, ensure=True)
 @click.group()
 @click.option("--debug", default=True, is_flag=True,
               help="Enables debug mode.")
-@click.option("--verbose", default=True, is_flag=True,
+@click.option("--verbose", default=False, is_flag=True,
               help="Enables verbose mode.")
 @click.option("--database", default=DATABASE_URL,
               help="Path to database.")

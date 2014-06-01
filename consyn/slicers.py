@@ -38,7 +38,7 @@ class Segmentor(object):
         self.position = 0
 
     def __repr__(self):
-        keys = ['position', 'onsets', 'channel']
+        keys = ["position", "onsets", "channel"]
         values = ["{}={}".format(key, getattr(self, key)) for key in keys
                   if hasattr(self, key)]
         values.append("buffer={}".format(self.buffer.shape[0]))

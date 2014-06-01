@@ -21,12 +21,15 @@ import matplotlib.pyplot as plt
 import numpy
 
 from . import configurator
+from ..features import AubioFeatures
 from ..loaders import AubioUnitLoader
 from ..models import MediaFile
+from ..models import Unit
 from ..utils import Concatenate
 from ..utils import UnitGenerator
 
 
+FEATURES = AubioFeatures().methods
 TICK_COLOR = "#b9b9b9"
 GRID_COLOR = "#003902"
 WAVE_COLOR = "#00e399"
@@ -61,7 +64,39 @@ def command(config, mediafile, hopsize):
     time = numpy.linspace(0, samps_to_secs(duration, mediafile.samplerate),
                           num=duration)
 
-    figure, axes = plt.subplots(mediafile.channels, sharex=True, sharey=True)
+    figure, axes = plt.subplots(
+        mediafile.channels, sharex=True, sharey=True,
+        subplot_kw={
+            "xlim": [0, samps_to_secs(duration, mediafile.samplerate)],
+            "ylim": [-1, 1]
+        }
+    )
+
+    # Features
+
+    figure_feats, axes_feats = plt.subplots(len(FEATURES), sharex=True)
+    features_all = collections.defaultdict(list)
+    timings = []
+    for unit in mediafile.units.order_by(Unit.position) \
+            .filter(Unit.channel == 0):
+        for feature in FEATURES:
+            features_all[feature].append(unit.features[feature])
+        timings.append(unit.position)
+
+    for index, key in enumerate(features_all):
+        axes_feats[index].plot(timings, features_all[key], color=WAVE_COLOR)
+        axes_feats[index].set_axisbelow(True)
+        axes_feats[index].patch.set_facecolor(BACK_COLOR)
+
+        for label in axes_feats[index].get_xticklabels():
+            label.set_color(TICK_COLOR)
+            label.set_fontsize(1)
+
+        for label in axes_feats[index].get_yticklabels():
+            label.set_color(TICK_COLOR)
+            label.set_fontsize(1)
+
+    # Buffer
 
     if not isinstance(axes, collections.Iterable):
         axes = [axes]
@@ -90,8 +125,9 @@ def command(config, mediafile, hopsize):
                 ax.axvline(x=position, color=ONSET_COLOR)
 
     figure.patch.set_facecolor(FIGURE_COLOR)
-
     figure.set_tight_layout(True)
-    plt.xlim([0, samps_to_secs(duration, mediafile.samplerate)])
-    plt.ylim([-1, 1])
+
+    figure_feats.set_facecolor(FIGURE_COLOR)
+    figure_feats.set_tight_layout(True)
+
     plt.show()

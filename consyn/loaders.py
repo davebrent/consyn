@@ -43,7 +43,7 @@ class AubioFileCache(object):
 
     def open(self, path, hopsize):
         if path not in self._soundfiles:
-            soundfile = aubio.source(path, 0, hopsize)
+            soundfile = aubio.source(path.encode('utf-8'), 0, hopsize)
             self._soundfiles[path] = soundfile
             self._counts[path] = 0
         if len(self._soundfiles) > OPEN_FILE_MAX:

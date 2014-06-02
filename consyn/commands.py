@@ -41,8 +41,7 @@ logger = logging.getLogger(__name__)
 def command(fn):
     def wrapped(*args, **kwargs):
         start = time.time()
-        logger.debug("{} started args={}, kwargs={}".format(
-            fn.__name__, args, kwargs))
+        logger.debug("{} started".format(fn.__name__))
         result = fn(*args, **kwargs)
         end = time.time()
         logger.debug("{} completed in {} secs".format(

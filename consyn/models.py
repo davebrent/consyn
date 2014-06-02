@@ -62,7 +62,7 @@ class MediaFile(Base):
 
     @classmethod
     def by_id_or_name(cls, session, parameter):
-        if parameter.isdigit():
+        if isinstance(parameter, int) or parameter.isdigit():
             return session.query(cls).get(int(parameter))
         try:
             return session.query(cls).filter_by(

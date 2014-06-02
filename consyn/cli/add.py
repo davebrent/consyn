@@ -21,7 +21,10 @@ from clint.textui import colored
 from clint.textui import indent
 from clint.textui import progress
 from clint.textui import puts
-from sqlalchemy.exc import ProgrammingError
+try:
+    from glob2 import glob
+except ImportError:
+    from glob import glob
 
 from . import configurator
 from ..commands import add_mediafile
@@ -45,6 +48,9 @@ from ..models import MediaFile
 def command(config, files, force, bufsize, hopsize, onset_threshold,
             onset_method):
 
+    if len(files) == 1 and not os.path.isfile(files[0]):
+        files = glob(files[0])
+
     progress_bar = progress.bar(range(len(files)))
     failures = []
     succeses = []
@@ -55,13 +61,7 @@ def command(config, files, force, bufsize, hopsize, onset_threshold,
             progress_bar.next()
             continue
 
-        try:
-            exists = MediaFile.by_id_or_name(config.session, path)
-        except ProgrammingError:
-            # FIXME:
-            failures.append("Unicode error {}".format(path))
-            progress_bar.next()
-            continue
+        exists = MediaFile.by_id_or_name(config.session, path)
 
         if exists:
             if force:

@@ -27,7 +27,7 @@ from ..settings import DATABASE_URL
 __all__ = ["configurator", "main"]
 
 
-COMMANDS = ["add", "ls", "rm", "mosaic", "show"]
+COMMANDS = ["add", "ls", "rm", "cluster", "mosaic", "show"]
 
 
 class Config(object):
@@ -57,6 +57,7 @@ def main(config, debug, verbose, database=DATABASE_URL):
     Session = sessionmaker(bind=engine)
 
     config.debug = debug
+    config.verbose = verbose
     config.database = database
     config.session = Session()
 

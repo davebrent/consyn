@@ -103,7 +103,7 @@ class Unit(Base):
         keys = ["id", "channel", "position", "duration"]
         values = ["{}={}".format(key, getattr(self, key)) for key in keys]
         values.insert(0, "mediafile={}".format(self.mediafile.name))
-        return "<Unit({})>".format(", ".join(values))
+        return "<Unit({})>".format(", ".join(values)).encode('utf-8')
 
     def __str__(self):
         return self.__repr__()
@@ -125,6 +125,7 @@ class Features(Base):
         Column("id", Integer, primary_key=True),
         Column("unit_id", Integer, ForeignKey("units.id")),
         Column("mediafile_id", Integer, ForeignKey("mediafiles.id")),
+        Column("cluster", Integer, nullable=True, default=0),
         *list((Column("feat_{}".format(feature), FEATURE_TYPE, nullable=True,
                default=0)
               for feature in range(FEATURE_SLOTS))) +
@@ -152,7 +153,7 @@ class Features(Base):
 
     def __iter__(self):
         for index in range(FEATURE_SLOTS):
-            yield (getattr(self, "label_{}".format(index)),
+            yield (index, getattr(self, "label_{}".format(index)),
                    getattr(self, "feat_{}".format(index)))
 
     def __repr__(self):
@@ -163,3 +164,13 @@ class Features(Base):
                 getattr(self, "feat_{}".format(index))
             ))
         return "<Features({})>".format(", ".join(values))
+
+    def vector(self):
+        return [value for _, _, value in self]
+
+    def copy(self):
+        copy = Features(False, False)
+        for index, label, feature in self:
+            setattr(copy, "label_{}".format(index), label)
+            setattr(copy, "feat_{}".format(index), feature)
+        return copy

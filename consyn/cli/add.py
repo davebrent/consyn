@@ -17,10 +17,6 @@ from __future__ import unicode_literals
 import os
 
 import click
-from clint.textui import colored
-from clint.textui import indent
-from clint.textui import progress
-from clint.textui import puts
 try:
     from glob2 import glob
 except ImportError:
@@ -51,55 +47,45 @@ def command(config, files, force, bufsize, hopsize, onset_threshold,
     if len(files) == 1 and not os.path.isfile(files[0]):
         files = glob(files[0])
 
-    progress_bar = progress.bar(range(len(files)))
     failures = []
     succeses = []
+    files = set(files)
+    label = "Adding {} files".format(len(files))
 
-    for path in set(files):
-        if not os.path.isfile(path):
-            failures.append("File does not exist {}".format(path))
-            progress_bar.next()
-            continue
-
-        exists = MediaFile.by_id_or_name(config.session, path)
-
-        if exists:
-            if force:
-                remove_mediafile(config.session, exists)
-            else:
-                failures.append("File has already been added".format(path))
-                progress_bar.next()
+    with click.progressbar(files, label=label) as files:
+        for path in files:
+            if not os.path.isfile(path):
+                failures.append("File does not exist {}".format(path))
                 continue
 
-        add_mediafile(
-            config.session, path,
-            bufsize=bufsize,
-            hopsize=hopsize,
-            method=onset_method,
-            threshold=onset_threshold)
-        config.session.commit()
-        succeses.append(path)
-        progress_bar.next()
+            exists = MediaFile.by_id_or_name(config.session, path)
 
-    try:
-        progress_bar.next()
-    except StopIteration:
-        pass
+            if exists:
+                if force:
+                    remove_mediafile(config.session, exists)
+                else:
+                    failures.append("File has already been added".format(path))
+                    continue
 
-    print("")
+            add_mediafile(
+                config.session, path,
+                bufsize=bufsize,
+                hopsize=hopsize,
+                method=onset_method,
+                threshold=onset_threshold)
+            config.session.commit()
+            succeses.append(path)
 
     if len(succeses) > 0:
-        puts(colored.green("Successfully added {} files".format(
-            len(succeses))))
+        succ_str = "Successfully added {} files".format(len(succeses))
+        click.secho(succ_str, fg="green")
         if config.verbose:
-            with indent(2):
-                for path in succeses:
-                    puts(colored.green(path))
+            for path in succeses:
+                click.secho(path, fg="green")
 
     if len(failures) > 0:
-        puts(colored.red("Failed to add {} files".format(
-            len(failures))))
+        fail_str = "Failed to add {} files".format(len(failures))
+        click.secho(fail_str, fg="red")
         if config.verbose:
-            with indent(2):
-                for path in succeses:
-                    puts(colored.red(path))
+            for path in succeses:
+                click.secho(path, fg="red")

@@ -16,8 +16,6 @@
 from __future__ import unicode_literals
 
 import click
-from clint.textui import colored
-from clint.textui import puts
 
 from . import configurator
 from ..commands import remove_mediafile
@@ -35,7 +33,7 @@ def command(config, files):
     for param in files:
         mediafile = MediaFile.by_id_or_name(config.session, param)
         if not mediafile:
-            puts(colored.red("MediaFile {} not found".format(param)))
+            click.secho("MediaFile {} not found".format(param), fg="red")
             continue
 
         remove_mediafile(config.session, mediafile)

@@ -17,9 +17,6 @@ from __future__ import unicode_literals
 import os
 
 import click
-from clint.textui import colored
-from clint.textui import progress
-from clint.textui import puts
 from sqlalchemy import not_
 
 from . import configurator
@@ -37,13 +34,12 @@ from ..utils import UnitGenerator
 class ProgressBar(object):
 
     def __init__(self, size):
-        self.progress_bar = progress.bar(range(size))
+        self.size = size
 
     def __call__(self, pipe):
-        for pool in pipe:
-            self.progress_bar.next()
-            yield pool
-        self.progress_bar.next()
+        with click.progressbar(pipe, length=self.size) as prog_pipe:
+            for pool in prog_pipe:
+                yield pool
 
 
 @click.command("mosaic", short_help="Create an audio mosaic.")
@@ -57,26 +53,27 @@ class ProgressBar(object):
 @configurator
 def command(config, output, target, mediafiles, force, selection):
     if os.path.isfile(output) and not force:
-        puts(colored.red("File already exists"))
-    else:
-        target = get_mediafile(config.session, target)
-        mediafiles = [get_mediafile(config.session, mediafile)
-                      for mediafile in mediafiles]
-        config.session.commit()
+        click.secho("File already exists", fg="red")
+        return
 
-        if len(mediafiles) == 0:
-            mediafiles = config.session.query(MediaFile).filter(not_(
-                MediaFile.id == target.id)).all()
+    target = get_mediafile(config.session, target)
+    mediafiles = [get_mediafile(config.session, mediafile)
+                  for mediafile in mediafiles]
+    config.session.commit()
 
-        [{"mediafile": target.path}] \
-            >> UnitGenerator(config.session) \
-            >> SelectionFactory(selection, config.session, mediafiles) \
-            >> AubioUnitLoader(
-                hopsize=2048,
-                key=lambda state: state["unit"].mediafile.path) \
-            >> TimeStretch() \
-            >> Envelope() \
-            >> ProgressBar(target.units.count()) \
-            >> Concatenate(unit_key="target") \
-            >> AubioWriter(output) \
-            >> list
+    if len(mediafiles) == 0:
+        mediafiles = config.session.query(MediaFile).filter(not_(
+            MediaFile.id == target.id)).all()
+
+    [{"mediafile": target.path}] \
+        >> UnitGenerator(config.session) \
+        >> SelectionFactory(selection, config.session, mediafiles) \
+        >> AubioUnitLoader(
+            hopsize=2048,
+            key=lambda state: state["unit"].mediafile.path) \
+        >> TimeStretch() \
+        >> Envelope() \
+        >> ProgressBar(target.units.count()) \
+        >> Concatenate(unit_key="target") \
+        >> AubioWriter(output) \
+        >> list

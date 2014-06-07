@@ -20,8 +20,6 @@ import math
 import random
 
 import click
-from clint.textui import colored
-from clint.textui import puts
 
 from . import configurator
 from ..models import Unit
@@ -102,11 +100,11 @@ def command(config, clusters):
         else:
             previous = map(lambda center: center.copy(), centers)
 
-    puts(colored.green("Clustering completed sucessfully with {} iterations"
-                       .format(iterations)))
+    click.secho("Clustering completed sucessfully with {} iterations"
+                .format(iterations), fg="green")
 
     if config.verbose:
         for cluster in xrange(clusters):
             total = config.session.query(Features).filter(
                 Features.cluster == cluster).count()
-            puts("Cluster {}: {} units".format(cluster, total))
+            click.echo("Cluster {}: {} units".format(cluster, total))

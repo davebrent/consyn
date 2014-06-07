@@ -24,7 +24,10 @@ from .base import AudioFrame
 from .base import FileLoaderStage
 from .base import UnitLoaderStage
 from .settings import DTYPE
-from .settings import OPEN_FILE_MAX
+from .settings import get_settings
+
+
+settings = get_settings(__name__)
 
 
 __all__ = [
@@ -46,7 +49,7 @@ class AubioFileCache(object):
             soundfile = aubio.source(path.encode('utf-8'), 0, hopsize)
             self._soundfiles[path] = soundfile
             self._counts[path] = 0
-        if len(self._soundfiles) > OPEN_FILE_MAX:
+        if len(self._soundfiles) > settings.get("max_open_files"):
             minimum = float("inf")
             min_path = None
             for path in self._counts:

@@ -36,6 +36,7 @@ __all__ = [
 
 
 logger = logging.getLogger(__name__)
+config = settings.get_settings(__name__, name='add_mediafile')
 
 
 def command(fn):
@@ -51,9 +52,12 @@ def command(fn):
 
 
 @command
-def add_mediafile(session, path, bufsize=settings.BUFSIZE,
-                  hopsize=settings.HOPSIZE, minsize=settings.BUFSIZE,
-                  method="default", threshold=0.3, silence=-90):
+def add_mediafile(session, path, bufsize=int(config.get("bufsize")),
+                  hopsize=int(config.get("hopsize")),
+                  segmentation=config.get("segmentation"),
+                  method=config.get("method"),
+                  threshold=float(config.get("threshold")),
+                  silence=float(config.get("silence"))):
     """Add a mediafile to a database.
 
     Returns the analysed mediafile segmented into units.
@@ -70,12 +74,12 @@ def add_mediafile(session, path, bufsize=settings.BUFSIZE,
     results = [{"path": path}] \
         >> AubioFileLoader(hopsize=hopsize) \
         >> SlicerFactory(
-            "onsets",
+            segmentation,
             winsize=bufsize,
             hopsize=hopsize,
             method=method,
             threshold=threshold,
-            silence=-90) \
+            silence=silence) \
         >> AubioFeatures(winsize=bufsize, hopsize=hopsize)
 
     mediafile = MediaFile(duration=0, channels=1)

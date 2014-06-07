@@ -14,6 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from __future__ import unicode_literals
+import datetime
 import os
 
 import click
@@ -47,6 +48,7 @@ def command(config, files, force, bufsize, hopsize, onset_threshold,
     if len(files) == 1 and not os.path.isfile(files[0]):
         files = glob(files[0])
 
+    duration = 0
     failures = []
     succeses = []
     files = set(files)
@@ -67,17 +69,23 @@ def command(config, files, force, bufsize, hopsize, onset_threshold,
                     failures.append("File has already been added".format(path))
                     continue
 
-            add_mediafile(
-                config.session, path,
-                bufsize=bufsize,
-                hopsize=hopsize,
-                method=onset_method,
-                threshold=onset_threshold)
-            config.session.commit()
-            succeses.append(path)
+            try:
+                mediafile = add_mediafile(config.session, path,
+                                          bufsize=bufsize,
+                                          hopsize=hopsize,
+                                          method=onset_method,
+                                          threshold=onset_threshold)
+
+                duration += mediafile.duration / mediafile.samplerate
+                config.session.commit()
+                succeses.append(path)
+            except StandardError:
+                failures.append("Unable to open file")
 
     if len(succeses) > 0:
-        succ_str = "Successfully added {} files".format(len(succeses))
+        succ_str = "Successfully added {} files, ({})".format(
+            len(succeses), datetime.timedelta(seconds=duration))
+
         click.secho(succ_str, fg="green")
         if config.verbose:
             for path in succeses:

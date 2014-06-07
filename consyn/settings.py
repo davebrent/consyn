@@ -13,9 +13,10 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+from __future__ import unicode_literals
 from ConfigParser import RawConfigParser
-import os
 from StringIO import StringIO
+import os
 
 import click
 from sqlalchemy import Float

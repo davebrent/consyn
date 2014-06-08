@@ -16,6 +16,7 @@
 from __future__ import unicode_literals
 import datetime
 import os
+import time
 
 import click
 try:
@@ -52,6 +53,7 @@ def command(config, files, force, bufsize, hopsize, onset_threshold,
     failures = []
     succeses = []
     files = set(files)
+    start = time.time()
     label = "Adding {} files".format(len(files))
 
     with click.progressbar(files, label=label) as files:
@@ -83,8 +85,9 @@ def command(config, files, force, bufsize, hopsize, onset_threshold,
                 failures.append("Unable to open file")
 
     if len(succeses) > 0:
-        succ_str = "Successfully added {} files, ({})".format(
-            len(succeses), datetime.timedelta(seconds=duration))
+        succ_str = "Successfully added {} files, ({}) in {}".format(
+            len(succeses), datetime.timedelta(seconds=duration),
+            datetime.timedelta(seconds=int(time.time() - start)))
 
         click.secho(succ_str, fg="green")
         if config.verbose:

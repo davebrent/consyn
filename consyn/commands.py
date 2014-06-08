@@ -20,6 +20,7 @@ import os
 import time
 
 from . import settings
+from .base import Pipeline
 from .features import AubioFeatures
 from .loaders import AubioFileLoader
 from .models import Features
@@ -71,17 +72,19 @@ def add_mediafile(session, path, bufsize=int(config.get("bufsize")),
       threshold (float): The threshold to use for onset detection
 
     """
-    results = [{"path": path}] \
-        >> AubioFileLoader(hopsize=hopsize) \
-        >> SlicerFactory(
+    pipeline = Pipeline([
+        AubioFileLoader(path, hopsize=hopsize),
+        SlicerFactory(
             segmentation,
             winsize=bufsize,
             hopsize=hopsize,
             method=method,
             threshold=threshold,
-            silence=silence) \
-        >> AubioFeatures(winsize=bufsize, hopsize=hopsize)
+            silence=silence),
+        AubioFeatures(winsize=bufsize, hopsize=hopsize)
+    ])
 
+    results = pipeline.run()
     mediafile = MediaFile(duration=0, channels=1)
 
     for index, result in enumerate(results):

@@ -69,32 +69,19 @@ class AudioFrame(object):
 
 
 class Stage(object):
+    pass
 
-    def __init__(self, iterable=None):
-        self.iterator = iter(iterable if iterable else [])
 
-    def __iter__(self):
-        return self.iterator
+class Pipeline(object):
 
-    def next(self):
-        return next(self.iterator)
+    def __init__(self, stages):
+        self.stages = stages
 
-    def __pipe__(self, inpipe):
-        self.iterator = self.__call__(inpipe)
-        return self
-
-    @staticmethod
-    def pipe(inpipe, outpipe):
-        if hasattr(outpipe, '__pipe__'):
-            return outpipe.__pipe__(inpipe)
-        elif hasattr(outpipe, '__call__'):
-            return outpipe(inpipe)
-
-    def __rshift__(self, outpipe):
-        return Stage.pipe(self, outpipe)
-
-    def __rrshift__(self, inpipe):
-        return Stage.pipe(inpipe, self)
+    def run(self, *args):
+        pool = self.stages[0](args)
+        for stage in self.stages[1:]:
+            pool = stage(pool)
+        return pool
 
 
 class FileLoaderStage(Stage):
@@ -105,18 +92,13 @@ class FileLoaderStage(Stage):
       key (function): Function for getting a filepath from the current context
 
     """
-    def __init__(self, hopsize=1024, key=lambda context: context["path"]):
-        super(FileLoaderStage, self).__init__()
+    def __init__(self, filepath, hopsize=1024):
+        self.filepath = filepath
         self.hopsize = hopsize
-        self.key = key
 
-    def __call__(self, pipe):
-        for context in pipe:
-            path = self.key(context)
-            frames = self.read(path)
-            for frame in frames:
-                context["frame"] = frame
-                yield context
+    def __call__(self, *args):
+        for frame in self.read(self.filepath):
+            yield {"frame": frame}
 
         if hasattr(self, "close"):
             self.close()
@@ -128,7 +110,6 @@ class FileLoaderStage(Stage):
 class UnitLoaderStage(Stage):
     """Base class for generating a stream of AudioFrames from Units"""
     def __init__(self, hopsize=1024, key=lambda context: context["path"]):
-        super(UnitLoaderStage, self).__init__()
         self.hopsize = hopsize
         self.key = key
 
@@ -150,8 +131,6 @@ class UnitLoaderStage(Stage):
 
 class SegmentationStage(Stage):
     """Base class for slicing a stream of AudioFrames"""
-    def __init__(self):
-        super(SegmentationStage, self).__init__()
 
     def __call__(self, pipe):
         for context in pipe:
@@ -175,7 +154,6 @@ class SegmentationStage(Stage):
 class SelectionStage(Stage):
     """Base class for unit selection algorithms"""
     def __init__(self, session, mediafiles):
-        super(SelectionStage, self).__init__()
         self.mediafiles = [mediafile.id for mediafile in mediafiles]
         self.session = session
 
@@ -192,8 +170,6 @@ class SelectionStage(Stage):
 
 class SynthesisStage(Stage):
     """Base class for processing units before concatenation"""
-    def __init__(self):
-        super(SynthesisStage, self).__init__()
 
     def __call__(self, pipe):
         for context in pipe:
@@ -214,8 +190,6 @@ class SynthesisStage(Stage):
 
 class AnalysisStage(Stage):
     """Base class for analysing an AudioFrame"""
-    def __init__(self):
-        super(AnalysisStage, self).__init__()
 
     def __call__(self, pipe):
         for context in pipe:

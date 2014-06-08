@@ -19,6 +19,7 @@ import os
 import numpy
 
 from consyn.base import AudioFrame
+from consyn.base import Pipeline
 from consyn.commands import add_mediafile
 from consyn.loaders import AubioUnitLoader
 from consyn.models import MediaFile
@@ -35,8 +36,13 @@ class UnitGeneratorTests(DatabaseTests):
     def _test_iter_amount(self, name, num):
         path = os.path.join(SOUND_DIR, name)
         mediafile = add_mediafile(self.session, path, threshold=0)
-        initial = [{"mediafile": mediafile}]
-        results = initial >> UnitGenerator(self.session) >> list
+
+        pipeline = Pipeline([
+            UnitGenerator(mediafile, self.session),
+            list
+        ])
+
+        results = pipeline.run()
         self.assertEqual(len(results), num)
 
     def test_stereo(self):
@@ -53,12 +59,14 @@ class ConcatenateTests(DatabaseTests):
         mediafile = add_mediafile(self.session, path)
         self.session.flush()
 
-        mediafile = [{"mediafile": mediafile}] \
-            >> UnitGenerator(self.session) \
-            >> AubioUnitLoader(
-                key=lambda state: state["unit"].mediafile.path) \
-            >> Concatenate() \
-            >> list
+        pipeline = Pipeline([
+            UnitGenerator(mediafile, self.session),
+            AubioUnitLoader(key=lambda state: state["unit"].mediafile.path),
+            Concatenate(),
+            list
+        ])
+
+        mediafile = pipeline.run()
 
     def test_internal_buffer(self):
         """Test initialization of internal buffer at the correct size"""

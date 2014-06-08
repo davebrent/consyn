@@ -19,6 +19,7 @@ import unittest
 
 import numpy
 
+from consyn.base import Pipeline
 from consyn.loaders import AubioFileLoader
 from consyn.loaders import AubioUnitLoader
 from consyn.models import Unit
@@ -31,10 +32,12 @@ class FileLoaderTests(unittest.TestCase):
     def test_iterframes_in_order(self):
         path = os.path.join(SOUND_DIR, "amen-stereo.wav")
 
-        result = [{"path": path}] \
-            >> AubioFileLoader(hopsize=1024) \
-            >> list
+        pipeline = Pipeline([
+            AubioFileLoader(path, hopsize=1024),
+            list
+        ])
 
+        result = pipeline.run()
         self.assertEqual(len(result), 138)
 
         previous = 0
@@ -49,7 +52,10 @@ class FileLoaderTests(unittest.TestCase):
     def test_duration_equal_samples_length(self):
         """Test duration is always equal to length of samples array"""
         path = os.path.join(SOUND_DIR, "cant_let_you_use_me.wav")
-        results = [{"path": path}] >> AubioFileLoader()
+
+        pipeline = Pipeline([AubioFileLoader(path)])
+        results = pipeline.run()
+
         for res in results:
             frame = res["frame"]
             self.assertEqual(frame.duration, frame.samples.shape[0])
@@ -57,7 +63,10 @@ class FileLoaderTests(unittest.TestCase):
     def test_channels_zero_indexed(self):
         """Test channels are zero indexed"""
         path = os.path.join(SOUND_DIR, "amen-stereo.wav")
-        results = [{"path": path}] >> AubioFileLoader(hopsize=1024)
+
+        pipeline = Pipeline([AubioFileLoader(path, hopsize=1024)])
+        results = pipeline.run()
+
         channels = set([res["frame"].channel for res in results])
         self.assertEqual(channels, set([0, 1]))
 
@@ -73,9 +82,12 @@ class UnitLoaderTests(unittest.TestCase):
         self.assertEqual(unit.channel, 0)
         self.assertEqual(unit.position, 0)
 
-        initial = [{"path": path, "unit": unit}]
-        loader = AubioUnitLoader(hopsize=bufsize)
-        result = initial >> loader >> list
+        pipeline = Pipeline([
+            AubioUnitLoader(hopsize=bufsize),
+            list
+        ])
+
+        result = pipeline.run({"path": path, "unit": unit})
 
         self.assertEqual(len(result), 1)
         samples = result[0]["frame"].samples
@@ -96,8 +108,8 @@ class UnitLoaderTests(unittest.TestCase):
         loader = AubioUnitLoader(hopsize=bufsize)
 
         for index in range(reads):
-            initial = [{"path": path, "unit": unit}]
-            result = initial >> loader >> list
+            pipeline = Pipeline([loader, list])
+            result = pipeline.run({"path": path, "unit": unit})
 
             self.assertEqual(len(result), 1)
             samples = result[0]["frame"].samples

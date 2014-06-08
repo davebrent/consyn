@@ -19,6 +19,7 @@ import math
 import os
 import unittest
 
+from consyn.base import Pipeline
 from consyn.loaders import AubioFileLoader
 from consyn.slicers import BeatSlicer
 from consyn.slicers import OnsetSlicer
@@ -33,14 +34,16 @@ class OnsetSlicerTests(unittest.TestCase):
     def _onset_test(self, path, channels, expected_onsets, expected_duration):
         path = os.path.join(SOUND_DIR, path)
 
-        result = [{"path": path}] \
-            >> AubioFileLoader(hopsize=1024) \
-            >> OnsetSlicer(
+        pipeline = Pipeline([
+            AubioFileLoader(path, hopsize=1024),
+            OnsetSlicer(
                 winsize=1024,
                 threshold=0,
-                method="default") \
-            >> list
+                method="default"),
+            list
+        ])
 
+        result = pipeline.run()
         self.assertEqual(len(result) / channels, expected_onsets)
 
         for i in range(channels):
@@ -61,13 +64,19 @@ class OnsetSlicerTests(unittest.TestCase):
         """Deteted onsets should be similar to those detected by aubioonset"""
         bufsize = 512
         hopsize = 256
-        results = [{"path": os.path.join(SOUND_DIR, "amen-mono.wav")}] \
-            >> AubioFileLoader(hopsize=hopsize) \
-            >> OnsetSlicer(
+
+        pipeline = Pipeline([
+            AubioFileLoader(
+                os.path.join(SOUND_DIR, "amen-mono.wav"),
+                hopsize=hopsize),
+            OnsetSlicer(
                 winsize=bufsize,
                 hopsize=hopsize,
-                method="default") \
-            >> list
+                method="default"),
+            list
+        ])
+
+        results = pipeline.run()
 
         # values from aubioonset & aubio/demos/demo_onset.py
         self.assertEqual(map(lambda r: r["frame"].position, results), [
@@ -94,8 +103,11 @@ class OnsetSlicerTests(unittest.TestCase):
 
     def _test_all_samples_flushed(self, case, duration):
         """Test all samples are outputted by onset slicer"""
-        results = [{"path": os.path.join(SOUND_DIR, case)}] \
-            >> AubioFileLoader()
+        pipeline = Pipeline([
+            AubioFileLoader(os.path.join(SOUND_DIR, case))
+        ])
+
+        results = pipeline.run()
 
         frame_durs = collections.defaultdict(int)
         for res in results:
@@ -107,9 +119,13 @@ class OnsetSlicerTests(unittest.TestCase):
         self.assertEqual(frame_durs[1], duration)
 
         slicer = OnsetSlicer()
-        results = [{"path": os.path.join(SOUND_DIR, case)}] \
-            >> AubioFileLoader() \
-            >> slicer
+
+        pipeline = Pipeline([
+            AubioFileLoader(os.path.join(SOUND_DIR, case)),
+            slicer
+        ])
+
+        results = pipeline.run()
 
         onset_durs = collections.defaultdict(int)
         for res in results:
@@ -127,10 +143,13 @@ class RegularSlicerTests(unittest.TestCase):
     def test_simple_slices(self):
         path = os.path.join(SOUND_DIR, "amen-mono.wav")
 
-        results = [{"path": path}] \
-            >> AubioFileLoader(hopsize=1024) \
-            >> RegularSlicer(winsize=2048) \
-            >> list
+        pipeline = Pipeline([
+            AubioFileLoader(path, hopsize=1024),
+            RegularSlicer(winsize=2048),
+            list
+        ])
+
+        results = pipeline.run()
 
         self.assertEqual(len(results), math.ceil(70560.0 / 2048.0))
         positions = [pool["frame"].position for pool in results]
@@ -162,10 +181,13 @@ class BeatSlicerTests(unittest.TestCase):
     def test_slice(self):
         path = os.path.join(SOUND_DIR, "amen-mono.wav")
 
-        results = [{"path": path}] \
-            >> AubioFileLoader(hopsize=512) \
-            >> BeatSlicer(bpm=150, interval="1/16") \
-            >> list
+        pipeline = Pipeline([
+            AubioFileLoader(path, hopsize=512),
+            BeatSlicer(bpm=150, interval="1/16"),
+            list
+        ])
+
+        results = pipeline.run()
 
         positions = [pool["frame"].position for pool in results]
         self.assertEqual(positions, [

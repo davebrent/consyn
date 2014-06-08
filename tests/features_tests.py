@@ -20,6 +20,7 @@ import unittest
 
 import numpy
 
+from consyn.base import Pipeline
 from consyn.loaders import AubioFileLoader
 from consyn.slicers import OnsetSlicer
 from consyn.features import AubioFeatures
@@ -37,10 +38,13 @@ class AubioFeaturesTests(unittest.TestCase):
 
         analyser = AubioFeatures(winsize=bufsize, hopsize=bufsize)
 
-        result = [{"path": path}] \
-            >> AubioFileLoader(hopsize=bufsize) \
-            >> analyser \
-            >> list
+        pipeline = Pipeline([
+            AubioFileLoader(path, hopsize=bufsize),
+            analyser,
+            list
+        ])
+
+        result = pipeline.run()
 
         self.assertEqual(math.ceil(duration * channels / float(bufsize)),
                          len(result))
@@ -55,15 +59,17 @@ class AubioFeaturesTests(unittest.TestCase):
 
         analyser = AubioFeatures(winsize=1024, hopsize=512)
 
-        result = [{"path": path}] \
-            >> AubioFileLoader(hopsize=bufsize) \
-            >> OnsetSlicer(
+        pipeline = Pipeline([
+            AubioFileLoader(path, hopsize=bufsize),
+            OnsetSlicer(
                 winsize=1024,
                 threshold=0,
-                method="default") \
-            >> analyser \
-            >> list
+                method="default"),
+            analyser,
+            list
+        ])
 
+        result = pipeline.run()
         self.assertEqual(len(result), 20)
 
         for res in result:

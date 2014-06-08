@@ -20,6 +20,7 @@ import click
 from sqlalchemy import not_
 
 from . import configurator
+from ..base import Pipeline
 from ..commands import get_mediafile
 from ..loaders import AubioUnitLoader
 from ..models import MediaFile
@@ -65,15 +66,18 @@ def command(config, output, target, mediafiles, force, selection):
         mediafiles = config.session.query(MediaFile).filter(not_(
             MediaFile.id == target.id)).all()
 
-    [{"mediafile": target.path}] \
-        >> UnitGenerator(config.session) \
-        >> SelectionFactory(selection, config.session, mediafiles) \
-        >> AubioUnitLoader(
+    pipeline = Pipeline([
+        UnitGenerator(target, config.session),
+        SelectionFactory(selection, config.session, mediafiles),
+        AubioUnitLoader(
             hopsize=2048,
-            key=lambda state: state["unit"].mediafile.path) \
-        >> TimeStretch() \
-        >> Envelope() \
-        >> ProgressBar(target.units.count()) \
-        >> Concatenate(unit_key="target") \
-        >> AubioWriter(output) \
-        >> list
+            key=lambda state: state["unit"].mediafile.path),
+        TimeStretch(),
+        Envelope(),
+        ProgressBar(target.units.count()),
+        Concatenate(unit_key="target"),
+        AubioWriter(output),
+        list
+    ])
+
+    pipeline.run()

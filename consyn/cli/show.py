@@ -21,6 +21,7 @@ import matplotlib.pyplot as plt
 import numpy
 
 from . import configurator
+from ..base import Pipeline
 from ..features import AubioFeatures
 from ..loaders import AubioUnitLoader
 from ..models import MediaFile
@@ -50,14 +51,16 @@ def samps_to_secs(samples, samplerate):
 def command(config, mediafile, hopsize):
     mediafile = MediaFile.by_id_or_name(config.session, mediafile)
 
-    results = [{"mediafile": mediafile}] \
-        >> UnitGenerator(config.session) \
-        >> AubioUnitLoader(
+    pipeline = Pipeline([
+        UnitGenerator(mediafile, config.session),
+        AubioUnitLoader(
             hopsize=hopsize,
-            key=lambda state: state["unit"].mediafile.path) \
-        >> Concatenate() \
-        >> list
+            key=lambda state: state["unit"].mediafile.path),
+        Concatenate(),
+        list
+    ])
 
+    results = pipeline.run()
     results = results[0]
 
     duration = float(results["buffer"].shape[1])

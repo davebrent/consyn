@@ -19,7 +19,6 @@ import aubio
 import numpy
 
 from .base import Stage
-from .models import MediaFile
 from .settings import DTYPE
 
 
@@ -32,19 +31,14 @@ __all__ = [
 
 class UnitGenerator(Stage):
 
-    def __init__(self, session):
+    def __init__(self, mediafile, session):
         super(UnitGenerator, self).__init__()
+        self.mediafile = mediafile
         self.session = session
 
-    def __call__(self, pipe):
-        for pool in pipe:
-            if not isinstance(pool["mediafile"], MediaFile):
-                pool["mediafile"] = MediaFile.by_id_or_name(
-                    self.session, pool["mediafile"])
-
-            for unit in pool["mediafile"].units:
-                pool["unit"] = unit
-                yield pool
+    def __call__(self, *args):
+        for unit in self.mediafile.units:
+            yield {"unit": unit, "mediafile": self.mediafile}
 
 
 class Concatenate(Stage):

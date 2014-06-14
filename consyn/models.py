@@ -103,7 +103,7 @@ class Unit(Base):
         keys = ["id", "channel", "position", "duration"]
         values = ["{}={}".format(key, getattr(self, key)) for key in keys]
         values.insert(0, "mediafile={}".format(self.mediafile.name))
-        return "<Unit({})>".format(", ".join(values)).encode('utf-8')
+        return "<Unit({})>".format(", ".join(values)).encode("utf-8")
 
     def __str__(self):
         return self.__repr__()

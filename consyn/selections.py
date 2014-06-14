@@ -26,11 +26,7 @@ from .models import Unit
 from .settings import FEATURE_SLOTS
 
 
-__all__ = [
-    "NearestNeighbour",
-    "RandomUnit",
-    "SelectionFactory"
-]
+__all__ = ["SelectionFactory"]
 
 
 class NearestNeighbour(SelectionStage):

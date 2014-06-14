@@ -41,7 +41,7 @@ from ..models import MediaFile
               help="Aubio onset threshold.")
 @click.option("--onset-method", default="default",
               help="Aubio onset threshold.")
-@click.argument('files', nargs=-1)
+@click.argument("files", nargs=-1)
 @configurator
 def command(config, files, force, bufsize, hopsize, onset_threshold,
             onset_method):

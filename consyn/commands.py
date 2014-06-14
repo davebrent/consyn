@@ -37,7 +37,7 @@ __all__ = [
 
 
 logger = logging.getLogger(__name__)
-config = settings.get_settings(__name__, name='add_mediafile')
+config = settings.get_settings(__name__, name="add_mediafile")
 
 
 def command(fn):

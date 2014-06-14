@@ -30,7 +30,7 @@ SOUND_DIR = os.path.abspath(
 class DatabaseTests(unittest.TestCase):
 
     def setUp(self):
-        engine = create_engine('sqlite:///:memory:')
+        engine = create_engine("sqlite:///:memory:")
         Base.metadata.create_all(engine)
         Session = sessionmaker(bind=engine)
         self.session = Session()

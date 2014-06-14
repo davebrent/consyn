@@ -22,13 +22,13 @@ from sqlalchemy import not_
 from . import configurator
 from ..base import Pipeline
 from ..commands import get_mediafile
+from ..concatenators import ConcatenatorFactory
 from ..loaders import AubioUnitLoader
 from ..models import MediaFile
 from ..resynthesis import Envelope
 from ..resynthesis import TimeStretch
 from ..selections import SelectionFactory
 from ..utils import AubioWriter
-from ..utils import Concatenate
 from ..utils import UnitGenerator
 
 
@@ -75,8 +75,8 @@ def command(config, output, target, mediafiles, force, selection):
         TimeStretch(),
         Envelope(),
         ProgressBar(target.units.count()),
-        Concatenate(unit_key="target"),
-        AubioWriter(output),
+        ConcatenatorFactory("clip", target, unit_key="target"),
+        AubioWriter(target, output),
         list
     ])
 

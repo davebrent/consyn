@@ -22,11 +22,11 @@ import numpy
 
 from . import configurator
 from ..base import Pipeline
+from ..concatenators import ConcatenatorFactory
 from ..features import AubioFeatures
 from ..loaders import AubioUnitLoader
 from ..models import MediaFile
 from ..models import Unit
-from ..utils import Concatenate
 from ..utils import UnitGenerator
 
 
@@ -56,7 +56,7 @@ def command(config, mediafile, hopsize):
         AubioUnitLoader(
             hopsize=hopsize,
             key=lambda state: state["unit"].mediafile.path),
-        Concatenate(),
+        ConcatenatorFactory("clip", mediafile),
         list
     ])
 

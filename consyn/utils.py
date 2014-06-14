@@ -19,12 +19,10 @@ import aubio
 import numpy
 
 from .base import Stage
-from .settings import DTYPE
 
 
 __all__ = [
     "UnitGenerator",
-    "Concatenate",
     "AubioWriter"
 ]
 
@@ -38,67 +36,25 @@ class UnitGenerator(Stage):
 
     def __call__(self, *args):
         for unit in self.mediafile.units:
-            yield {"unit": unit, "mediafile": self.mediafile}
-
-
-class Concatenate(Stage):
-
-    def __init__(self, unit_key="unit", channels=2):
-        super(Concatenate, self).__init__()
-        self.unit_key = unit_key
-        self.channels = channels
-        self.buffers = {}
-
-    def clip_duration(self, samples, duration):
-        actual = samples.shape[0]
-        tmp = numpy.zeros(duration, dtype=DTYPE)
-
-        if actual < duration:
-            tmp[0:actual] = samples
-        elif actual > duration:
-            tmp[0:duration] = samples[0:duration]
-        else:
-            tmp = samples
-
-        return tmp
-
-    def __call__(self, pipe):
-        for pool in pipe:
-            mediafile = pool["mediafile"]
-            target = pool[self.unit_key]
-            samples = pool["frame"].samples
-
-            if mediafile.path not in self.buffers:
-                self.buffers[mediafile.path] = numpy.zeros(
-                    (mediafile.channels, mediafile.duration),
-                    dtype=DTYPE)
-
-            samples = self.clip_duration(samples, target.duration)
-            buff = self.buffers[mediafile.path]
-            buff[target.channel][
-                target.position:target.position + target.duration] = samples
-
-        yield {
-            "mediafile": pool["mediafile"],
-            "buffer": buff
-        }
+            yield {"unit": unit}
 
 
 class AubioWriter(Stage):
 
-    def __init__(self, outfile):
+    def __init__(self, mediafile, outfile):
         super(AubioWriter, self).__init__()
         self.outfile = outfile
+        self.mediafile = mediafile
 
     def __call__(self, pipe):
         for pool in pipe:
             framesize = 2048
-            mediafile = pool["mediafile"]
             buff = pool["buffer"]
 
-            sink = aubio.sink(self.outfile, 0, mediafile.channels)
+            sink = aubio.sink(self.outfile, 0, self.mediafile.channels)
             out_samples = numpy.array_split(
-                buff, int(float(mediafile.duration) / int(framesize)), axis=1)
+                buff, int(float(self.mediafile.duration) / int(framesize)),
+                axis=1)
 
             for frame in out_samples:
                 amount = frame[0].shape[0]

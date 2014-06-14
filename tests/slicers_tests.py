@@ -137,28 +137,28 @@ class OnsetSlicerTests(unittest.TestCase):
         self.assertEqual(onset_durs[1], frame_durs[1])
 
 
-class RegularSlicerTests(unittest.TestCase):
-
-    @unittest.expectedFailure
-    def test_simple_slices(self):
-        path = os.path.join(SOUND_DIR, "amen-mono.wav")
-
-        pipeline = Pipeline([
-            AubioFileLoader(path, hopsize=1024),
-            RegularSlicer(winsize=2048),
-            list
-        ])
-
-        results = pipeline.run()
-
-        self.assertEqual(len(results), math.ceil(70560.0 / 2048.0))
-        positions = [pool["frame"].position for pool in results]
-        self.assertEqual(positions, [
-            0, 2048, 4096, 6144, 8192, 10240, 12288, 14336, 16384, 18432,
-            20480, 22528, 24576, 26624, 28672, 30720, 32768, 34816, 36864,
-            38912, 40960, 43008, 45056, 47104, 49152, 51200, 53248, 55296,
-            57344, 59392, 61440, 63488, 65536, 67584, 69632
-        ])
+# class RegularSlicerTests(unittest.TestCase):
+#
+#     @unittest.expectedFailure
+#     def test_simple_slices(self):
+#         path = os.path.join(SOUND_DIR, "amen-mono.wav")
+#
+#         pipeline = Pipeline([
+#             AubioFileLoader(path, hopsize=1024),
+#             RegularSlicer(winsize=2048),
+#             list
+#         ])
+#
+#         results = pipeline.run()
+#
+#         self.assertEqual(len(results), math.ceil(70560.0 / 2048.0))
+#         positions = [pool["frame"].position for pool in results]
+#         self.assertEqual(positions, [
+#             0, 2048, 4096, 6144, 8192, 10240, 12288, 14336, 16384, 18432,
+#             20480, 22528, 24576, 26624, 28672, 30720, 32768, 34816, 36864,
+#             38912, 40960, 43008, 45056, 47104, 49152, 51200, 53248, 55296,
+#             57344, 59392, 61440, 63488, 65536, 67584, 69632
+#         ])
 
 
 class BeatSlicerTests(unittest.TestCase):

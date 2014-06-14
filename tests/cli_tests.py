@@ -13,23 +13,23 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-from __future__ import unicode_literals
-import os
-import unittest
-
-from . import SOUND_DIR
-from . import DatabaseTests
-
-
-class CLITests(DatabaseTests):
-
-    @unittest.expectedFailure
-    def test_simple(self):
-        from consyn.cli import commands
-        commands["add"](self.session, argv=[
-            "add",
-            os.path.join(SOUND_DIR, "amen-stereo.wav"),
-            os.path.join(SOUND_DIR, "amen-mono.wav")])
-
-        commands["ls"](self.session, argv=["ls"])
-        commands["rm"](self.session, argv=["rm", "1", "2"])
+# from __future__ import unicode_literals
+# import os
+# import unittest
+#
+# from . import SOUND_DIR
+# from . import DatabaseTests
+#
+#
+# class CLITests(DatabaseTests):
+#
+#     @unittest.expectedFailure
+#     def test_simple(self):
+#         from consyn.cli import commands
+#         commands["add"](self.session, argv=[
+#             "add",
+#             os.path.join(SOUND_DIR, "amen-stereo.wav"),
+#             os.path.join(SOUND_DIR, "amen-mono.wav")])
+#
+#         commands["ls"](self.session, argv=["ls"])
+#         commands["rm"](self.session, argv=["rm", "1", "2"])

@@ -31,14 +31,14 @@ class CLITests(unittest.TestCase):
         sound2 = os.path.join(SOUND_DIR, "amen-mono.wav")
 
         runner = CliRunner()
-        result = runner.invoke(main, [database, "add", sound1])
+        result = runner.invoke(main, ["--verbose", database, "add", sound1])
         self.assertEqual(result.exit_code, 0)
 
-        result = runner.invoke(main, [database, "add", sound2])
+        result = runner.invoke(main, ["--verbose", database, "add", sound2])
         self.assertEqual(result.exit_code, 0)
 
-        result = runner.invoke(main, [database, "ls"])
+        result = runner.invoke(main, ["--verbose", database, "ls"])
         self.assertEqual(result.exit_code, 0)
 
-        result = runner.invoke(main, [database, "rm", "1", "2"])
+        result = runner.invoke(main, ["--verbose", database, "rm", "1", "2"])
         self.assertEqual(result.exit_code, 0)

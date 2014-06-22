@@ -98,5 +98,5 @@ def command(config, files, force, bufsize, hopsize, onset_threshold,
         fail_str = "Failed to add {} files".format(len(failures))
         click.secho(fail_str, fg="red")
         if config.verbose:
-            for path in succeses:
+            for path in failures:
                 click.secho(path, fg="red")

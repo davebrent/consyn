@@ -17,12 +17,23 @@ from __future__ import unicode_literals
 import unittest
 
 from consyn.models import Features
+from consyn.models import MediaFile
 from consyn import settings
+
+
+class MediaFileTests(unittest.TestCase):
+
+    def test_name(self):
+        mediafile = MediaFile(path="/test/case.mp3")
+        self.assertEqual(mediafile.name, "case")
+        mediafile = MediaFile()
+        self.assertEqual(mediafile.name, None)
 
 
 class FeaturesTests(unittest.TestCase):
 
     def test_init_features(self):
+        order = ["feat_3", "feat_2", "feat_1"]
         features = Features(False, {
             "feat_1": 0.1,
             "feat_2": 0.2,
@@ -33,8 +44,28 @@ class FeaturesTests(unittest.TestCase):
         self.assertEqual(features["feat_2"], 0.2)
         self.assertEqual(features["feat_3"], 0.3)
 
+        for index, label, value in features:
+            self.assertEqual(order[index], label)
+
+        self.assertEqual(
+            str(features), "<Features(feat_3=0.3, feat_2=0.2, feat_1=0.1)>")
+
+        self.assertEqual(features.vector(), [0.3, 0.2, 0.1])
+
     def test_to_many_features(self):
         feats = {}
         for index in range(settings.FEATURE_SLOTS + 1):
             feats["test_{}".format(index)] = index
         self.assertRaises(AssertionError, Features, False, feats)
+
+    def test_copy_features(self):
+        features = Features(False, {
+            "feat_1": 0.1,
+            "feat_2": 0.2,
+            "feat_3": 0.3
+        })
+
+        features2 = features.copy()
+        self.assertEqual(features["feat_1"], features2["feat_1"])
+        self.assertEqual(features["feat_2"], features2["feat_2"])
+        self.assertEqual(features["feat_3"], features2["feat_3"])

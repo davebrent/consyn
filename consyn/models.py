@@ -153,17 +153,19 @@ class Features(Base):
 
     def __iter__(self):
         for index in range(FEATURE_SLOTS):
-            yield (index, getattr(self, "label_{}".format(index)),
-                   getattr(self, "feat_{}".format(index)))
+            label = getattr(self, "label_{}".format(index))
+            if label is None:
+                break
+            yield (index, label, getattr(self, "feat_{}".format(index)))
 
     def __repr__(self):
         values = []
-        for index in range(FEATURE_SLOTS):
-            values.append("{}={}".format(
-                getattr(self, "label_{}".format(index)),
-                getattr(self, "feat_{}".format(index))
-            ))
+        for index, label, value in self:
+            values.append("{}={}".format(label, value))
         return "<Features({})>".format(", ".join(values))
+
+    def __str__(self):
+        return self.__repr__()
 
     def vector(self):
         return [value for _, _, value in self]

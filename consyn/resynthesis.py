@@ -45,6 +45,8 @@ class TimeStretch(SynthesisStage):
 
     def process(self, samples, unit, target):
         if self.factor is None:
+            if samples.shape[0] == target.duration:
+                return samples, unit
             factor = float(target.duration) / float(unit.duration)
         else:
             factor = self.factor

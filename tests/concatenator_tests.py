@@ -24,6 +24,7 @@ from consyn.commands import add_mediafile
 from consyn.loaders import AubioUnitLoader
 from consyn.models import MediaFile
 from consyn.models import Unit
+from consyn.concatenators import BaseConcatenator
 from consyn.concatenators import ConcatenatorFactory
 from consyn.utils import UnitGenerator
 
@@ -32,6 +33,11 @@ from . import SOUND_DIR
 
 
 class ConcatenateTests(DatabaseTests):
+
+    def test_base(self):
+        mediafile = MediaFile(duration=50, channels=2)
+        base = BaseConcatenator(mediafile)
+        self.assertRaises(NotImplementedError, base.concatenate, None, None)
 
     def test_concatenate_file(self):
         path = os.path.join(SOUND_DIR, "hot_tamales.wav")

@@ -16,13 +16,11 @@
 """Base classes for processing media files"""
 from __future__ import unicode_literals
 import collections
-import inspect
 
 
 __all__ = [
     "AudioFrame",
     "Stage",
-    "StageFactory",
     "FileLoaderStage",
     "UnitLoaderStage",
     "SegmentationStage",
@@ -201,18 +199,6 @@ class AnalysisStage(Stage):
     def analyse(self, samples):
         raise NotImplementedError("AnalysisStages must return features")
 
-
-class StageFactory(object):
-
-    def __new__(cls, name, *args, **kwargs):
-        if name not in cls.objects:
-            raise Exception
-
-        Class = cls.objects[name]
-        kargs, _, _, defaults = inspect.getargspec(Class.__init__)
-
-        if defaults is not None:
-            kargs = kargs[-len(defaults):]
-
-        kwargs = {key: kwargs[key] for key in kargs if key in kwargs}
-        return Class(*args, **kwargs)
+    def __len__(self):
+        raise NotImplementedError(
+            "AnalysisStages exports unknown number of features")

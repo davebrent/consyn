@@ -26,7 +26,7 @@ class AddMediaFileTests(DatabaseTests):
 
     def _test_file(self, name, num_units, samplerate, num_channels, duration):
         path = os.path.join(SOUND_DIR, name)
-        mediafile = add_mediafile(self.session, path)
+        mediafile = add_mediafile(self.session, path, segmentation="beats")
 
         self.assertEqual(mediafile.units.count(), num_units)
         self.assertEqual(mediafile.features.count(), num_units)
@@ -41,7 +41,7 @@ class AddMediaFileTests(DatabaseTests):
         self.assertEqual(_duration, mediafile.duration * mediafile.channels)
 
     def test_stereo_mediafile(self):
-        self._test_file("amen-stereo.wav", 20, 44100, 2, 70560)
+        self._test_file("amen-stereo.wav", 26, 44100, 2, 70560)
 
     def test_mono_mediafile(self):
-        self._test_file("amen-mono.wav", 10, 44100, 1, 70560)
+        self._test_file("amen-mono.wav", 13, 44100, 1, 70560)

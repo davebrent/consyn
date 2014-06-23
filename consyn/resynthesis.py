@@ -56,7 +56,8 @@ class TimeStretch(SynthesisStage):
 
         phi = numpy.zeros(self.winsize)
         out = numpy.zeros(self.winsize, dtype=complex)
-        sigout = numpy.zeros(duration / factor + self.winsize)
+        sigout = numpy.zeros(
+            int(float(duration) / float(factor) + self.winsize))
         window = numpy.hanning(self.winsize)
 
         amp = max(samples)

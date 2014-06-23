@@ -20,8 +20,8 @@ import unittest
 import numpy
 
 from consyn.base import Pipeline
-from consyn.loaders import AubioFileLoader
-from consyn.loaders import AubioUnitLoader
+from consyn.ext import FileLoader
+from consyn.ext import UnitLoader
 from consyn.models import Unit
 
 from . import SOUND_DIR
@@ -30,15 +30,15 @@ from . import SOUND_DIR
 class FileLoaderTests(unittest.TestCase):
 
     def test_iterframes_in_order(self):
-        path = os.path.join(SOUND_DIR, "amen-stereo.wav")
+        path = os.path.join(SOUND_DIR, "amen-mono.wav")
 
         pipeline = Pipeline([
-            AubioFileLoader(path, hopsize=1024),
+            FileLoader(path, hopsize=1024),
             list
         ])
 
         result = pipeline.run()
-        self.assertEqual(len(result), 138)
+        self.assertEqual(len(result), 69)
 
         previous = 0
         for pool in result:
@@ -53,7 +53,7 @@ class FileLoaderTests(unittest.TestCase):
         """Test duration is always equal to length of samples array"""
         path = os.path.join(SOUND_DIR, "cant_let_you_use_me.wav")
 
-        pipeline = Pipeline([AubioFileLoader(path)])
+        pipeline = Pipeline([FileLoader(path)])
         results = pipeline.run()
 
         for res in results:
@@ -64,7 +64,7 @@ class FileLoaderTests(unittest.TestCase):
         """Test channels are zero indexed"""
         path = os.path.join(SOUND_DIR, "amen-stereo.wav")
 
-        pipeline = Pipeline([AubioFileLoader(path, hopsize=1024)])
+        pipeline = Pipeline([FileLoader(path, hopsize=1024)])
         results = pipeline.run()
 
         channels = set([res["frame"].channel for res in results])
@@ -83,7 +83,7 @@ class UnitLoaderTests(unittest.TestCase):
         self.assertEqual(unit.position, 0)
 
         pipeline = Pipeline([
-            AubioUnitLoader(hopsize=bufsize),
+            UnitLoader(hopsize=bufsize),
             list
         ])
 
@@ -105,7 +105,7 @@ class UnitLoaderTests(unittest.TestCase):
         self.assertEqual(unit.channel, 0)
         self.assertEqual(unit.position, 0)
 
-        loader = AubioUnitLoader(hopsize=bufsize)
+        loader = UnitLoader(hopsize=bufsize)
 
         for index in range(reads):
             pipeline = Pipeline([loader, list])

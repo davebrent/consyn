@@ -20,6 +20,7 @@ import unittest
 from click.testing import CliRunner
 
 from consyn.cli import main
+
 from . import SOUND_DIR
 
 

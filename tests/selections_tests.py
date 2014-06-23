@@ -27,7 +27,7 @@ class NearestNeighbourTests(DatabaseTests):
 
     def test_simple(self):
         path = os.path.join(SOUND_DIR, "amen-mono.wav")
-        mediafile = add_mediafile(self.session, path)
+        mediafile = add_mediafile(self.session, path, segmentation="beats")
         self.session.flush()
 
         selector = NearestNeighbour(self.session, [mediafile])

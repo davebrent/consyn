@@ -28,7 +28,7 @@ class UnitGeneratorTests(DatabaseTests):
 
     def _test_iter_amount(self, name, num):
         path = os.path.join(SOUND_DIR, name)
-        mediafile = add_mediafile(self.session, path, threshold=0)
+        mediafile = add_mediafile(self.session, path, segmentation="beats")
 
         pipeline = Pipeline([
             UnitGenerator(mediafile, self.session),
@@ -39,7 +39,7 @@ class UnitGeneratorTests(DatabaseTests):
         self.assertEqual(len(results), num)
 
     def test_stereo(self):
-        self._test_iter_amount("amen-stereo.wav", 20)
+        self._test_iter_amount("amen-stereo.wav", 26)
 
     def test_mono(self):
-        self._test_iter_amount("amen-mono.wav", 10)
+        self._test_iter_amount("amen-mono.wav", 13)

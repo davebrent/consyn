@@ -16,11 +16,11 @@
 import numpy
 
 from .base import Stage
-from .base import StageFactory
 from .settings import DTYPE
+from .utils import factory
 
 
-__all__ = ["ConcatenatorFactory"]
+__all__ = ["concatenator"]
 
 
 class BaseConcatenator(Stage):
@@ -80,9 +80,8 @@ class StackConcatenator(BaseConcatenator):
     pass
 
 
-class ConcatenatorFactory(StageFactory):
-    objects = {
-        "clip": ClipConcatenator,
-        "overlay": OverlayConcatenator,
-        "stack": StackConcatenator
-    }
+def concatenator(name, *args, **kwargs):
+    objects = {"clip": ClipConcatenator,
+               "overlay": OverlayConcatenator,
+               "stack": StackConcatenator}
+    return factory(objects, name, *args, **kwargs)

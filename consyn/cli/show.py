@@ -22,15 +22,15 @@ import numpy
 
 from . import configurator
 from ..base import Pipeline
-from ..concatenators import ConcatenatorFactory
-from ..features import AubioFeatures
-from ..loaders import AubioUnitLoader
+from ..concatenators import concatenator
+from ..ext import Analyser
+from ..ext import UnitLoader
 from ..models import MediaFile
 from ..models import Unit
 from ..utils import UnitGenerator
 
 
-FEATURES = AubioFeatures().methods
+FEATURES = len(Analyser())
 TICK_COLOR = "#b9b9b9"
 GRID_COLOR = "#003902"
 WAVE_COLOR = "#00e399"
@@ -53,10 +53,10 @@ def command(config, mediafile, hopsize):
 
     pipeline = Pipeline([
         UnitGenerator(mediafile, config.session),
-        AubioUnitLoader(
+        UnitLoader(
             hopsize=hopsize,
             key=lambda state: state["unit"].mediafile.path),
-        ConcatenatorFactory("clip", mediafile),
+        concatenator("clip", mediafile),
         list
     ])
 

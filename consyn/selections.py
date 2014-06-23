@@ -20,13 +20,13 @@ import random
 from sqlalchemy.sql import func
 
 from .base import SelectionStage
-from .base import StageFactory
 from .models import Features
 from .models import Unit
 from .settings import FEATURE_SLOTS
+from .utils import factory
 
 
-__all__ = ["SelectionFactory"]
+__all__ = ["selection"]
 
 
 class NearestNeighbour(SelectionStage):
@@ -55,8 +55,7 @@ class RandomUnit(SelectionStage):
         return self.session.query(Unit).get(random.randint(1, count - 1))
 
 
-class SelectionFactory(StageFactory):
-    objects = {
-        "nearest": NearestNeighbour,
-        "random": RandomUnit
-    }
+def selection(name, *args, **kwargs):
+    objects = {"nearest": NearestNeighbour,
+               "random": RandomUnit}
+    return factory(objects, name, *args, **kwargs)

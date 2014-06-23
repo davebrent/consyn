@@ -21,12 +21,12 @@ import time
 
 from . import settings
 from .base import Pipeline
-from .features import AubioFeatures
-from .loaders import AubioFileLoader
+from .ext import Analyser
+from .ext import FileLoader
 from .models import Features
 from .models import MediaFile
 from .models import Unit
-from .slicers import SlicerFactory
+from .slicers import slicer
 
 
 __all__ = [
@@ -73,15 +73,15 @@ def add_mediafile(session, path, bufsize=int(config.get("bufsize")),
 
     """
     pipeline = Pipeline([
-        AubioFileLoader(path, hopsize=hopsize),
-        SlicerFactory(
+        FileLoader(path, hopsize=hopsize),
+        slicer(
             segmentation,
             winsize=bufsize,
             hopsize=hopsize,
             method=method,
             threshold=threshold,
             silence=silence),
-        AubioFeatures(winsize=bufsize, hopsize=hopsize)
+        Analyser(winsize=bufsize, hopsize=hopsize)
     ])
 
     results = pipeline.run()

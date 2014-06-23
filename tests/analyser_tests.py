@@ -21,14 +21,14 @@ import unittest
 import numpy
 
 from consyn.base import Pipeline
-from consyn.loaders import AubioFileLoader
-from consyn.slicers import OnsetSlicer
-from consyn.features import AubioFeatures
+from consyn.ext import Analyser
+from consyn.ext import FileLoader
+from consyn.ext import OnsetSlicer
 
 from . import SOUND_DIR
 
 
-class AubioFeaturesTests(unittest.TestCase):
+class AnalyserTests(unittest.TestCase):
 
     def test_same_buffersize(self):
         bufsize = 1024
@@ -36,10 +36,10 @@ class AubioFeaturesTests(unittest.TestCase):
         channels = 2
         path = os.path.join(SOUND_DIR, "amen-stereo.wav")
 
-        analyser = AubioFeatures(winsize=bufsize, hopsize=bufsize)
+        analyser = Analyser(winsize=bufsize, hopsize=bufsize)
 
         pipeline = Pipeline([
-            AubioFileLoader(path, hopsize=bufsize),
+            FileLoader(path, hopsize=bufsize),
             analyser,
             list
         ])
@@ -57,10 +57,10 @@ class AubioFeaturesTests(unittest.TestCase):
         bufsize = 1024
         path = os.path.join(SOUND_DIR, "amen-stereo.wav")
 
-        analyser = AubioFeatures(winsize=1024, hopsize=512)
+        analyser = Analyser(winsize=1024, hopsize=512)
 
         pipeline = Pipeline([
-            AubioFileLoader(path, hopsize=bufsize),
+            FileLoader(path, hopsize=bufsize),
             OnsetSlicer(
                 winsize=1024,
                 threshold=0,

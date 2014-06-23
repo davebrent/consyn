@@ -16,16 +16,15 @@
 """Classes for slicing a stream of AudioFrames"""
 from __future__ import unicode_literals
 
-import aubio
 import numpy
 
 from .base import AudioFrame
 from .base import SegmentationStage
-from .base import StageFactory
 from .settings import DTYPE
+from .utils import factory
 
 
-__all__ = ["SlicerFactory"]
+__all__ = ["slicer"]
 
 
 class Segmentor(object):
@@ -119,42 +118,6 @@ class BaseSlicer(SegmentationStage):
         return frame
 
 
-class OnsetSlicer(BaseSlicer):
-    """Slices a stream of audio frames on their onsets.
-
-    This is a thin wrapper around aubio.onset.
-
-    Kwargs:
-      winsize (int): The size of the buffer to analyze.
-      hopsize (int): The number of samples between two consecutive analysis.
-      threshold (float): Set the threshold value for the onset peak picking.
-                         Typical values are typically within 0.001 and 0.9
-      method (str): Available methods are: default, energy, hfc, complex,
-                    phase, specdiff, kl, mkl, specflux.
-      silence (float): Set the silence threshold, in dB, under which the pitch
-                       will not be detected
-
-    """
-    def __init__(self, winsize=1024, threshold=0.3, method="default",
-                 hopsize=512, silence=-90):
-        super(OnsetSlicer, self).__init__()
-        self.winsize = winsize
-        self.hopsize = hopsize
-        self.threshold = threshold
-        self.method = method
-        self.silence = silence
-
-    def get_detector(self):
-        detector = aubio.onset(self.method, self.winsize, self.hopsize,
-                               self.samplerate)
-        detector.set_threshold(self.threshold)
-        detector.set_silence(self.silence)
-        return detector
-
-    def get_onset_position(self, segment):
-        return segment.detector.get_last()
-
-
 class RegularDetector(object):
 
     def __init__(self, size):
@@ -229,9 +192,11 @@ class BeatSlicer(BaseSlicer):
         return segment.detector.get_last()
 
 
-class SlicerFactory(StageFactory):
-    objects = {
-        "regular": RegularSlicer,
-        "onsets": OnsetSlicer,
-        "beats": BeatSlicer
-    }
+def slicer(name, *args, **kwargs):
+    from .ext import OnsetSlicer
+
+    objects = {"regular": RegularSlicer, "beats": BeatSlicer}
+    if OnsetSlicer is not None:
+        objects["onsets"] = OnsetSlicer
+
+    return factory(objects, name, *args, **kwargs)

@@ -22,13 +22,13 @@ from sqlalchemy import not_
 from . import configurator
 from ..base import Pipeline
 from ..commands import get_mediafile
-from ..concatenators import ConcatenatorFactory
-from ..loaders import AubioUnitLoader
+from ..concatenators import concatenator
+from ..ext import UnitLoader
+from ..ext import Writer
 from ..models import MediaFile
 from ..resynthesis import Envelope
 from ..resynthesis import TimeStretch
-from ..selections import SelectionFactory
-from ..utils import AubioWriter
+from ..selections import selection
 from ..utils import UnitGenerator
 
 
@@ -52,7 +52,7 @@ class ProgressBar(object):
 @click.argument("target")
 @click.argument("mediafiles", nargs=-1, required=False)
 @configurator
-def command(config, output, target, mediafiles, force, selection):
+def command(config, output, target, mediafiles, force, selection_type):
     if os.path.isfile(output) and not force:
         click.secho("File already exists", fg="red")
         return
@@ -68,15 +68,15 @@ def command(config, output, target, mediafiles, force, selection):
 
     pipeline = Pipeline([
         UnitGenerator(target, config.session),
-        SelectionFactory(selection, config.session, mediafiles),
-        AubioUnitLoader(
+        selection(selection_type, config.session, mediafiles),
+        UnitLoader(
             hopsize=2048,
             key=lambda state: state["unit"].mediafile.path),
         TimeStretch(),
         Envelope(),
         ProgressBar(target.units.count()),
-        ConcatenatorFactory("clip", target, unit_key="target"),
-        AubioWriter(target, output),
+        concatenator("clip", target, unit_key="target"),
+        Writer(target, output),
         list
     ])
 

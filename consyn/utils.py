@@ -14,16 +14,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from __future__ import unicode_literals
-
-import aubio
-import numpy
+import inspect
 
 from .base import Stage
 
 
 __all__ = [
     "UnitGenerator",
-    "AubioWriter"
+    "slice_array"
 ]
 
 
@@ -39,28 +37,29 @@ class UnitGenerator(Stage):
             yield {"unit": unit}
 
 
-class AubioWriter(Stage):
+def slice_array(arr, bufsize=1024, hopsize=512):
+    position = 0
+    duration = arr.shape[0]
+    while True:
+        if position >= duration:
+            raise StopIteration
+        if position + bufsize >= duration:
+            yield arr[position:]
+            raise StopIteration
+        else:
+            yield arr[position:position + bufsize]
+        position += hopsize
 
-    def __init__(self, mediafile, outfile):
-        super(AubioWriter, self).__init__()
-        self.outfile = outfile
-        self.mediafile = mediafile
 
-    def __call__(self, pipe):
-        for pool in pipe:
-            framesize = 2048
-            buff = pool["buffer"]
+def factory(objects, name, *args, **kwargs):
+    if name not in objects:
+        raise Exception("{} not found".format(name))
 
-            sink = aubio.sink(self.outfile, 0, self.mediafile.channels)
-            out_samples = numpy.array_split(
-                buff, int(float(self.mediafile.duration) / int(framesize)),
-                axis=1)
+    Class = objects[name]
+    kargs, _, _, defaults = inspect.getargspec(Class.__init__)
 
-            for frame in out_samples:
-                amount = frame[0].shape[0]
-                sink.do_multi(frame, amount)
+    if defaults is not None:
+        kargs = kargs[-len(defaults):]
 
-            sink.close()
-            del sink
-
-            yield {"out": self.outfile}
+    kwargs = {key: kwargs[key] for key in kargs if key in kwargs}
+    return Class(*args, **kwargs)

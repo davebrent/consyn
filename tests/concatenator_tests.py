@@ -21,11 +21,11 @@ import numpy
 from consyn.base import AudioFrame
 from consyn.base import Pipeline
 from consyn.commands import add_mediafile
-from consyn.loaders import AubioUnitLoader
+from consyn.concatenators import BaseConcatenator
+from consyn.concatenators import concatenator
+from consyn.ext import UnitLoader
 from consyn.models import MediaFile
 from consyn.models import Unit
-from consyn.concatenators import BaseConcatenator
-from consyn.concatenators import ConcatenatorFactory
 from consyn.utils import UnitGenerator
 
 from . import DatabaseTests
@@ -41,15 +41,15 @@ class ConcatenateTests(DatabaseTests):
 
     def test_concatenate_file(self):
         path = os.path.join(SOUND_DIR, "hot_tamales.wav")
-        mediafile = add_mediafile(self.session, path)
+        mediafile = add_mediafile(self.session, path, segmentation="beats")
         self.session.flush()
 
-        concatenator = ConcatenatorFactory("clip", mediafile)
+        concatenate = concatenator("clip", mediafile)
 
         pipeline = Pipeline([
             UnitGenerator(mediafile, self.session),
-            AubioUnitLoader(key=lambda state: state["unit"].mediafile.path),
-            concatenator,
+            UnitLoader(key=lambda state: state["unit"].mediafile.path),
+            concatenate,
             list
         ])
 
@@ -58,21 +58,21 @@ class ConcatenateTests(DatabaseTests):
     def test_internal_buffer(self):
         """Test initialization of internal buffer at the correct size"""
         mediafile = MediaFile(duration=50, channels=2, path="test.wav")
-        concatenator = ConcatenatorFactory("clip", mediafile)
+        concatenate = concatenator("clip", mediafile)
 
-        list(concatenator([
+        list(concatenate([
             {"frame": AudioFrame(samples=numpy.array([3] * 10)),
              "unit": Unit(channel=0, position=25, duration=10)}
         ]))
 
-        self.assertEqual(concatenator.buffer.shape, (2, 50))
-        self.assertEqual(list(concatenator.buffer[0][25:35]), [3] * 10)
+        self.assertEqual(concatenate.buffer.shape, (2, 50))
+        self.assertEqual(list(concatenate.buffer[0][25:35]), [3] * 10)
 
     def _test_clipper(self, samples, target):
         mediafile = MediaFile(duration=target.duration, channels=2,
                               path="test.wav")
-        concatenator = ConcatenatorFactory("clip", mediafile)
-        result = concatenator.clip_samples(samples, target.duration)
+        concatenate = concatenator("clip", mediafile)
+        result = concatenate.clip_samples(samples, target.duration)
         self.assertEqual(result.shape[0], target.duration)
         return result
 

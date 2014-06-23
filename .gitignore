@@ -6,4 +6,5 @@ NOTES.md
 *.sqlite
 *.wav
 env/
+libenv/
 cover/

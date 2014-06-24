@@ -198,5 +198,6 @@ def slicer(name, *args, **kwargs):
     objects = {"regular": RegularSlicer, "beats": BeatSlicer}
     if OnsetSlicer is not None:
         objects["onsets"] = OnsetSlicer
-
+    if name == "onsets" and OnsetSlicer is None:
+        name = "beats"
     return factory(objects, name, *args, **kwargs)

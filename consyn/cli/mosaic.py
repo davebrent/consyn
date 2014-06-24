@@ -46,13 +46,13 @@ class ProgressBar(object):
 @click.command("mosaic", short_help="Create an audio mosaic.")
 @click.option("--force", is_flag=True, default=False,
               help="Overwrite file(s) if already exists.")
-@click.option("--selection", default="nearest",
+@click.option("--select", default="nearest",
               help="Unit selection algorithm")
 @click.argument("output")
 @click.argument("target")
 @click.argument("mediafiles", nargs=-1, required=False)
 @configurator
-def command(config, output, target, mediafiles, force, selection_type):
+def command(config, output, target, mediafiles, force, select):
     if os.path.isfile(output) and not force:
         click.secho("File already exists", fg="red")
         return
@@ -68,7 +68,7 @@ def command(config, output, target, mediafiles, force, selection_type):
 
     pipeline = Pipeline([
         UnitGenerator(target, config.session),
-        selection(selection_type, config.session, mediafiles),
+        selection(select, config.session, mediafiles),
         UnitLoader(
             hopsize=2048,
             key=lambda state: state["unit"].mediafile.path),

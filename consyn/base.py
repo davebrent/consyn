@@ -200,5 +200,4 @@ class AnalysisStage(Stage):
         raise NotImplementedError("AnalysisStages must return features")
 
     def __len__(self):
-        raise NotImplementedError(
-            "AnalysisStages exports unknown number of features")
+        raise NotImplementedError("AnalysisStages must implement this")

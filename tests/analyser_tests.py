@@ -14,7 +14,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from __future__ import unicode_literals
-import math
 import os
 import unittest
 
@@ -23,7 +22,7 @@ import numpy
 from consyn.base import Pipeline
 from consyn.ext import Analyser
 from consyn.ext import FileLoader
-from consyn.ext import OnsetSlicer
+from consyn.slicers import slicer
 
 from . import SOUND_DIR
 
@@ -32,8 +31,6 @@ class AnalyserTests(unittest.TestCase):
 
     def test_same_buffersize(self):
         bufsize = 1024
-        duration = 70560
-        channels = 2
         path = os.path.join(SOUND_DIR, "amen-stereo.wav")
 
         analyser = Analyser(winsize=bufsize, hopsize=bufsize)
@@ -45,9 +42,6 @@ class AnalyserTests(unittest.TestCase):
         ])
 
         result = pipeline.run()
-
-        self.assertEqual(math.ceil(duration * channels / float(bufsize)),
-                         len(result))
 
         for res in result:
             for method in analyser.methods:
@@ -61,7 +55,8 @@ class AnalyserTests(unittest.TestCase):
 
         pipeline = Pipeline([
             FileLoader(path, hopsize=bufsize),
-            OnsetSlicer(
+            slicer(
+                "beats",
                 winsize=1024,
                 threshold=0,
                 method="default"),
@@ -70,7 +65,7 @@ class AnalyserTests(unittest.TestCase):
         ])
 
         result = pipeline.run()
-        self.assertEqual(len(result), 20)
+        self.assertEqual(len(result), 24)
 
         for res in result:
             for method in analyser.methods:

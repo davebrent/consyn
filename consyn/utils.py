@@ -40,6 +40,7 @@ class UnitGenerator(Stage):
 def slice_array(arr, bufsize=1024, hopsize=512):
     position = 0
     duration = arr.shape[0]
+
     while True:
         if position >= duration:
             raise StopIteration

@@ -1,10 +1,6 @@
 .coverage
 .DS_Store
-NOTES.md
-*.pyc
 *.egg-info
-*.sqlite
-*.wav
-env/
-libenv/
+*.pyc
 cover/
+env/

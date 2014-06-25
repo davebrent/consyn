@@ -15,25 +15,25 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from __future__ import unicode_literals
 import os
-import unittest
 
 import numpy
 
 from consyn.base import Pipeline
-from consyn.ext import Analyser
 from consyn.ext import FileLoader
 from consyn.slicers import slicer
 
-from . import SOUND_DIR
+from .. import SOUND_DIR
 
 
-class AnalyserTests(unittest.TestCase):
+class AnalyserTests(object):
+
+    Analyser = None
 
     def test_same_buffersize(self):
         bufsize = 1024
         path = os.path.join(SOUND_DIR, "amen-stereo.wav")
 
-        analyser = Analyser(winsize=bufsize, hopsize=bufsize)
+        analyser = self.Analyser(winsize=bufsize, hopsize=bufsize)
 
         pipeline = Pipeline([
             FileLoader(path, hopsize=bufsize),
@@ -51,7 +51,7 @@ class AnalyserTests(unittest.TestCase):
         bufsize = 1024
         path = os.path.join(SOUND_DIR, "amen-stereo.wav")
 
-        analyser = Analyser(winsize=1024, hopsize=512)
+        analyser = self.Analyser(winsize=1024, hopsize=512)
 
         pipeline = Pipeline([
             FileLoader(path, hopsize=bufsize),

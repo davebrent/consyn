@@ -15,25 +15,24 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from __future__ import unicode_literals
 import os
-import unittest
 
 import numpy
 
 from consyn.base import Pipeline
-from consyn.ext import FileLoader
-from consyn.ext import UnitLoader
 from consyn.models import Unit
 
-from . import SOUND_DIR
+from .. import SOUND_DIR
 
 
-class FileLoaderTests(unittest.TestCase):
+class FileLoaderTests(object):
+
+    FileLoader = None
 
     def test_iterframes_in_order(self):
         path = os.path.join(SOUND_DIR, "amen-mono.wav")
 
         pipeline = Pipeline([
-            FileLoader(path, hopsize=1024),
+            self.FileLoader(path, hopsize=1024),
             list
         ])
 
@@ -53,7 +52,7 @@ class FileLoaderTests(unittest.TestCase):
         """Test duration is always equal to length of samples array"""
         path = os.path.join(SOUND_DIR, "cant_let_you_use_me.wav")
 
-        pipeline = Pipeline([FileLoader(path)])
+        pipeline = Pipeline([self.FileLoader(path)])
         results = pipeline.run()
 
         for res in results:
@@ -64,14 +63,16 @@ class FileLoaderTests(unittest.TestCase):
         """Test channels are zero indexed"""
         path = os.path.join(SOUND_DIR, "amen-stereo.wav")
 
-        pipeline = Pipeline([FileLoader(path, hopsize=1024)])
+        pipeline = Pipeline([self.FileLoader(path, hopsize=1024)])
         results = pipeline.run()
 
         channels = set([res["frame"].channel for res in results])
         self.assertEqual(channels, set([0, 1]))
 
 
-class UnitLoaderTests(unittest.TestCase):
+class UnitLoaderTests(object):
+
+    UnitLoader = None
 
     def test_read_whole_file(self):
         bufsize = 1024
@@ -83,7 +84,7 @@ class UnitLoaderTests(unittest.TestCase):
         self.assertEqual(unit.position, 0)
 
         pipeline = Pipeline([
-            UnitLoader(hopsize=bufsize),
+            self.UnitLoader(hopsize=bufsize),
             list
         ])
 
@@ -105,7 +106,7 @@ class UnitLoaderTests(unittest.TestCase):
         self.assertEqual(unit.channel, 0)
         self.assertEqual(unit.position, 0)
 
-        loader = UnitLoader(hopsize=bufsize)
+        loader = self.UnitLoader(hopsize=bufsize)
 
         for index in range(reads):
             pipeline = Pipeline([loader, list])

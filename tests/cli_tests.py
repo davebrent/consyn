@@ -26,20 +26,29 @@ from . import SOUND_DIR
 
 class CLITests(unittest.TestCase):
 
+    def setUp(self):
+        self.database = "--database=sqlite:///:memory:"
+
     def test_simple(self):
-        database = "--database=sqlite:///:memory:"
         sound1 = os.path.join(SOUND_DIR, "amen-stereo.wav")
         sound2 = os.path.join(SOUND_DIR, "amen-mono.wav")
 
         runner = CliRunner()
-        result = runner.invoke(main, ["--verbose", database, "add", sound1])
+        result = runner.invoke(main, [
+            "--verbose", self.database, "add", sound1])
+        self.assertEqual(result.exception, None)
         self.assertEqual(result.exit_code, 0)
 
-        result = runner.invoke(main, ["--verbose", database, "add", sound2])
+        result = runner.invoke(main, [
+            "--verbose", self.database, "add", sound2])
+        self.assertEqual(result.exception, None)
         self.assertEqual(result.exit_code, 0)
 
-        result = runner.invoke(main, ["--verbose", database, "ls"])
+        result = runner.invoke(main, ["--verbose", self.database, "ls"])
+        self.assertEqual(result.exception, None)
         self.assertEqual(result.exit_code, 0)
 
-        result = runner.invoke(main, ["--verbose", database, "rm", "1", "2"])
+        result = runner.invoke(main, [
+            "--verbose", self.database, "rm", "1", "2"])
+        self.assertEqual(result.exception, None)
         self.assertEqual(result.exit_code, 0)

@@ -13,10 +13,12 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-"""Common commands operating on mediafiles"""
 from __future__ import unicode_literals
+import collections
 import logging
+import math
 import os
+import random
 import time
 
 from . import settings
@@ -32,7 +34,8 @@ from .slicers import slicer
 __all__ = [
     "add_mediafile",
     "get_mediafile",
-    "remove_mediafile"
+    "remove_mediafile",
+    "cluster_units"
 ]
 
 
@@ -140,3 +143,81 @@ def remove_mediafile(session, mediafile):
 
     session.delete(mediafile)
     session.commit()
+
+
+def _distance_from_center(center, feature):
+    summed = 0
+    for a, b in zip(center.vector(), feature.vector()):
+        summed += (a - b) ** 2.0
+    return math.sqrt(summed)
+
+
+def _update_centers(session, centers):
+    for cluster_index, center in enumerate(centers):
+        averages = collections.defaultdict(float)
+
+        all_features = session.query(Features).filter(
+            Features.cluster == cluster_index)
+
+        for features in all_features.all():
+            for index, label, value in features:
+                averages["feat_{}".format(index)] += value
+
+        total = all_features.count()
+        for key in averages:
+            setattr(center, key, float(averages[key]) / float(total))
+
+    return centers
+
+
+def _equal_centers(previous, centers):
+    result = True
+    for features1, features2 in zip(previous, centers):
+        for feat1, feat2 in zip(features1, features2):
+            if feat1[2] != feat2[2]:
+                result = False
+                break
+        if result is False:
+            break
+    return result
+
+
+@command
+def cluster_units(session, clusters):
+    """Cluster all units. Returns the number of iterations
+
+    Kwargs:
+      session: Sqlalchemy database session
+      clusters (int): Number of clusters
+
+    """
+    num_units = session.query(Unit).count()
+    centers = [session.query(Unit).get(pk + 1).features.copy()
+               for pk in random.sample(xrange(num_units - 2), clusters)]
+
+    previous = map(lambda center: center.copy(), centers)
+    iterations = 0
+
+    while True:
+        iterations += 1
+
+        for unit in session.query(Unit).all():
+            min_distance = float("inf")
+
+            for cluster_index, center in enumerate(centers):
+                distance = _distance_from_center(center, unit.features)
+                if distance >= min_distance:
+                    continue
+                min_distance = distance
+                unit.features.cluster = cluster_index
+
+        session.flush()
+        centers = _update_centers(session, centers)
+        session.flush()
+
+        if _equal_centers(previous, centers):
+            break
+        else:
+            previous = map(lambda center: center.copy(), centers)
+
+    return iterations

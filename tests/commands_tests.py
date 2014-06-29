@@ -17,6 +17,8 @@ from __future__ import unicode_literals
 import os
 
 from consyn.commands import add_mediafile
+from consyn.commands import cluster_units
+from consyn.models import Features
 
 from . import SOUND_DIR
 from . import DatabaseTests
@@ -45,3 +47,19 @@ class AddMediaFileTests(DatabaseTests):
 
     def test_mono_mediafile(self):
         self._test_file("amen-mono.wav", 13, 44100, 1, 70560)
+
+
+class ClusterUnitsTests(DatabaseTests):
+
+    def test_simple(self):
+        add_mediafile(self.session, os.path.join(SOUND_DIR, "amen-mono.wav"),
+                      segmentation="beats")
+        iterations = cluster_units(self.session, 3)
+        self.assertNotEqual(iterations, 0)
+
+        clusters = self.session.query(Features.cluster).all()
+        unique = set([])
+        for cluster in clusters:
+            unique.add(cluster[0])
+
+        self.assertEqual(len(unique), 3)

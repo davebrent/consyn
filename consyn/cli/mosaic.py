@@ -49,11 +49,12 @@ class ProgressBar(object):
               help="Overwrite file(s) if already exists.")
 @click.option("--select", default="nearest",
               help="Unit selection algorithm")
+@click.option("--concatenate", default="overlay", help="Concatenation method")
 @click.argument("output")
 @click.argument("target")
 @click.argument("mediafiles", nargs=-1, required=False)
 @configurator
-def command(config, output, target, mediafiles, force, select):
+def command(config, output, target, mediafiles, force, select, concatenate):
     if os.path.isfile(output) and not force:
         click.secho("File already exists", fg="red")
         return
@@ -77,7 +78,7 @@ def command(config, output, target, mediafiles, force, select):
         TimeStretch(),
         Envelope(),
         ProgressBar(target.units.count()),
-        concatenator("clip", target, unit_key="target"),
+        concatenator(concatenate, target, unit_key="target"),
         Writer(target, output),
         list
     ])

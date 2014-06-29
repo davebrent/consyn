@@ -72,8 +72,18 @@ class ClipConcatenator(BaseConcatenator):
         return tmp
 
 
-class OverlayConcatenator(BaseConcatenator):
-    pass
+class OverlayConcatenator(ClipConcatenator):
+
+    def concatenate(self, target, samples):
+        start = target.position
+        end = target.position + samples.shape[0]
+        try:
+            self.buffer[target.channel][start:end] += samples
+        except ValueError:
+            # FIXME: Extend buffer instead of trimming samples
+            end = target.position + target.duration
+            self.buffer[target.channel][start:end] += self.clip_samples(
+                samples, target.duration)
 
 
 class StackConcatenator(BaseConcatenator):

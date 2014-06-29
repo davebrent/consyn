@@ -18,6 +18,7 @@ import unittest
 
 from consyn.models import Features
 from consyn.models import MediaFile
+from consyn.models import Unit
 from consyn import settings
 
 
@@ -28,6 +29,23 @@ class MediaFileTests(unittest.TestCase):
         self.assertEqual(mediafile.name, "case")
         mediafile = MediaFile()
         self.assertEqual(mediafile.name, None)
+
+    def test_repr(self):
+        mediafile = MediaFile(id=0, path="/test/case.mp3", duration=10,
+                              channels=1, samplerate=80)
+        r = "id=0, name=case, duration=10, channels=1, samplerate=80, units=0"
+        self.assertEqual(str(mediafile), "<MediaFile({})>".format(r))
+
+
+class UnitTests(unittest.TestCase):
+
+    def test_repr(self):
+        mediafile = MediaFile(id=0, path="/test/case.mp3", duration=10,
+                              channels=1, samplerate=80)
+        unit = Unit(id=0, channel=1, position=1, duration=20)
+        unit.mediafile = mediafile
+        r = "mediafile=case, id=0, channel=1, position=1, duration=20"
+        self.assertEqual(str(unit), "<Unit({})>".format(r))
 
 
 class FeaturesTests(unittest.TestCase):
@@ -69,3 +87,7 @@ class FeaturesTests(unittest.TestCase):
         self.assertEqual(features["feat_1"], features2["feat_1"])
         self.assertEqual(features["feat_2"], features2["feat_2"])
         self.assertEqual(features["feat_3"], features2["feat_3"])
+
+    def test_get_feature_exception(self):
+        features = Features(False, {"feat_1": 0.1})
+        self.assertRaises(Exception, features.__getitem__, "feat_2")

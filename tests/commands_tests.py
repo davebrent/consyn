@@ -18,7 +18,10 @@ import os
 
 from consyn.commands import add_mediafile
 from consyn.commands import cluster_units
+from consyn.commands import get_mediafile
+from consyn.commands import remove_mediafile
 from consyn.models import Features
+from consyn.models import MediaFile
 
 from . import SOUND_DIR
 from . import DatabaseTests
@@ -47,6 +50,30 @@ class AddMediaFileTests(DatabaseTests):
 
     def test_mono_mediafile(self):
         self._test_file("amen-mono.wav", 13, 44100, 1, 70560)
+
+
+class GetMediaFileTests(DatabaseTests):
+
+    def test_simple(self):
+        path = os.path.join(SOUND_DIR, "amen-mono.wav")
+        mediafile = add_mediafile(self.session, path, segmentation="beats")
+
+        result = get_mediafile(self.session, path)
+        self.assertEqual(mediafile.id, result.id)
+
+    def test_add_if_not_found(self):
+        path = os.path.join(SOUND_DIR, "amen-mono.wav")
+        mediafile = get_mediafile(self.session, path)
+        self.assertTrue(isinstance(mediafile, MediaFile))
+
+
+class RemoveMediaFileTests(DatabaseTests):
+
+    def test_simple(self):
+        path = os.path.join(SOUND_DIR, "amen-mono.wav")
+        add_mediafile(self.session, path, segmentation="beats")
+        remove_mediafile(self.session, path)
+        self.assertEqual(self.session.query(MediaFile).count(), 0)
 
 
 class ClusterUnitsTests(DatabaseTests):

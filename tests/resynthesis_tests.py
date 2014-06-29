@@ -21,6 +21,7 @@ import numpy
 from consyn.models import Unit
 from consyn.resynthesis import Envelope
 from consyn.resynthesis import TimeStretch
+from consyn.resynthesis import TrimSilence
 
 
 class EnvelopeTests(unittest.TestCase):
@@ -58,3 +59,34 @@ class TimestretchTests(unittest.TestCase):
 
         samples2, _ = timestretch.process(samples, None, target)
         self.assertEqual(samples2.shape[0], 5120)
+
+
+class TrimSilenceTests(unittest.TestCase):
+
+    def test_simple(self):
+        """Test silence is removed from samples"""
+        trimmer = TrimSilence(cutoff=0.5)
+        samples = numpy.array([1, 1, 1, 0, 0], dtype="float32")
+        samples, _ = trimmer.process(samples, None, None)
+        self.assertEqual(list(samples), [1.0, 1.0, 1.0])
+
+    def test_non_zeroes(self):
+        """Test values less than a given value"""
+        trimmer = TrimSilence(cutoff=0.5)
+        samples = numpy.array([1, 1, 1, 0.0001, 0.0002], dtype="float32")
+        samples, _ = trimmer.process(samples, None, None)
+        self.assertEqual(list(samples), [1.0, 1.0, 1.0])
+
+    def test_negative(self):
+        """Test values less than a given value"""
+        trimmer = TrimSilence(cutoff=0.5)
+        samples = numpy.array([1, 1, 1, -0.0001, 0.0002], dtype="float32")
+        samples, _ = trimmer.process(samples, None, None)
+        self.assertEqual(list(samples), [1.0, 1.0, 1.0])
+
+    def test_only_from_ends(self):
+        """Test values less than a given value"""
+        trimmer = TrimSilence(cutoff=5)
+        samples = numpy.array([1, 10, 10, -1, 2, 10], dtype="float32")
+        samples, _ = trimmer.process(samples, None, None)
+        self.assertEqual(map(int, list(samples)), [10, 10, -1, 2, 10])

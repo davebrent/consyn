@@ -22,7 +22,8 @@ from .base import SynthesisStage
 
 __all__ = [
     "Envelope",
-    "TimeStretch"
+    "TimeStretch",
+    "TrimSilence"
 ]
 
 
@@ -91,3 +92,27 @@ class TimeStretch(SynthesisStage):
             sigout = numpy.array(amp * sigout, dtype="float32")
 
         return sigout, unit
+
+
+class TrimSilence(SynthesisStage):
+
+    def __init__(self, cutoff=0, trim="fb"):
+        self.cutoff = cutoff
+        self.trim = trim
+
+    def process(self, samples, unit, target):
+        if "f" in self.trim:
+            temporary = numpy.empty_like(samples)
+            temporary[:] = samples
+            temporary[numpy.abs(samples) <= self.cutoff] = 0
+            temporary = numpy.trim_zeros(temporary, trim="f")
+            samples = samples[samples.shape[0] - temporary.shape[0]:]
+
+        if "b" in self.trim:
+            temporary = numpy.empty_like(samples)
+            temporary[:] = samples
+            temporary[numpy.abs(temporary) <= self.cutoff] = 0
+            temporary = numpy.trim_zeros(temporary, trim="b")
+            samples = samples[0:temporary.shape[0]]
+
+        return samples, unit

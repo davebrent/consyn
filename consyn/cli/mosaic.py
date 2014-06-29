@@ -28,6 +28,7 @@ from ..ext import Writer
 from ..models import MediaFile
 from ..resynthesis import Envelope
 from ..resynthesis import TimeStretch
+from ..resynthesis import TrimSilence
 from ..selections import selection
 from ..utils import UnitGenerator
 
@@ -72,6 +73,7 @@ def command(config, output, target, mediafiles, force, select):
         UnitLoader(
             hopsize=2048,
             key=lambda state: state["unit"].mediafile.path),
+        TrimSilence(cutoff=0.0001),
         TimeStretch(),
         Envelope(),
         ProgressBar(target.units.count()),

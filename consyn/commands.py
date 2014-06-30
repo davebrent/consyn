@@ -14,12 +14,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from __future__ import unicode_literals
-import collections
 import logging
 import math
 import os
 import random
 import time
+
+from sqlalchemy.sql import func
 
 from . import settings
 from .base import Pipeline
@@ -28,6 +29,7 @@ from .ext import FileLoader
 from .models import Features
 from .models import MediaFile
 from .models import Unit
+from .settings import FEATURE_SLOTS
 from .slicers import slicer
 
 
@@ -154,18 +156,18 @@ def _distance_from_center(center, feature):
 
 def _update_centers(session, centers):
     for cluster_index, center in enumerate(centers):
-        averages = collections.defaultdict(float)
 
-        all_features = session.query(Features).filter(
-            Features.cluster == cluster_index)
+        query = []
+        for slot in range(FEATURE_SLOTS):
+            col_name = "feat_{}".format(slot)
+            query.append(func.avg(getattr(Features, col_name)))
 
-        for features in all_features.all():
-            for index, label, value in features:
-                averages["feat_{}".format(index)] += value
+        averages = session.query(*query).filter(
+            Features.cluster == cluster_index).one()
 
-        total = all_features.count()
-        for key in averages:
-            setattr(center, key, float(averages[key]) / float(total))
+        for index, value in enumerate(averages):
+            col_name = "feat_{}".format(index)
+            setattr(center, col_name, value)
 
     return centers
 

@@ -138,11 +138,8 @@ def remove_mediafile(session, mediafile):
     """
     if not isinstance(mediafile, MediaFile):
         mediafile = MediaFile.by_id_or_name(session, mediafile)
-    for feature in mediafile.features:
-        session.delete(feature)
-    for unit in mediafile.units:
-        session.delete(unit)
-
+    session.query(Features).filter(Features.mediafile == mediafile).delete()
+    session.query(Unit).filter(Unit.mediafile == mediafile).delete()
     session.delete(mediafile)
     session.commit()
 

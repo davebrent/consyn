@@ -109,6 +109,18 @@ class Unit(Base):
         return self.__repr__()
 
 
+class Cluster(Base):
+    __table__ = Table(
+        "clusters", Base.metadata,
+        Column("id", Integer, primary_key=True),
+        *list((Column("feat_{}".format(feature), FEATURE_TYPE, nullable=True,
+               default=0)
+              for feature in range(FEATURE_SLOTS))) +
+        list((Column("previous_feat_{}".format(feature), FEATURE_TYPE,
+              nullable=True, default=0)
+              for feature in range(FEATURE_SLOTS))))
+
+
 class Features(Base):
     """The extracted audible characteristics of a unit of sound.
 
@@ -125,7 +137,7 @@ class Features(Base):
         Column("id", Integer, primary_key=True),
         Column("unit_id", Integer, ForeignKey("units.id")),
         Column("mediafile_id", Integer, ForeignKey("mediafiles.id")),
-        Column("cluster", Integer, nullable=True, default=0),
+        Column("cluster", Integer, nullable=True, default=0, index=True),
         *list((Column("feat_{}".format(feature), FEATURE_TYPE, nullable=True,
                default=0)
               for feature in range(FEATURE_SLOTS))) +
@@ -166,13 +178,3 @@ class Features(Base):
 
     def __str__(self):
         return self.__repr__()
-
-    def vector(self):
-        return [value for _, _, value in self]
-
-    def copy(self):
-        copy = Features(False, False)
-        for index, label, feature in self:
-            setattr(copy, "label_{}".format(index), label)
-            setattr(copy, "feat_{}".format(index), feature)
-        return copy

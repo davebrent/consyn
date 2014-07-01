@@ -68,25 +68,11 @@ class FeaturesTests(unittest.TestCase):
         self.assertEqual(
             str(features), "<Features(feat_3=0.3, feat_2=0.2, feat_1=0.1)>")
 
-        self.assertEqual(features.vector(), [0.3, 0.2, 0.1])
-
     def test_to_many_features(self):
         feats = {}
         for index in range(settings.FEATURE_SLOTS + 1):
             feats["test_{}".format(index)] = index
         self.assertRaises(AssertionError, Features, False, feats)
-
-    def test_copy_features(self):
-        features = Features(False, {
-            "feat_1": 0.1,
-            "feat_2": 0.2,
-            "feat_3": 0.3
-        })
-
-        features2 = features.copy()
-        self.assertEqual(features["feat_1"], features2["feat_1"])
-        self.assertEqual(features["feat_2"], features2["feat_2"])
-        self.assertEqual(features["feat_3"], features2["feat_3"])
 
     def test_get_feature_exception(self):
         features = Features(False, {"feat_1": 0.1})

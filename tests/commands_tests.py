@@ -79,10 +79,12 @@ class RemoveMediaFileTests(DatabaseTests):
 class ClusterUnitsTests(DatabaseTests):
 
     def test_simple(self):
+        max_iterations = 50
         add_mediafile(self.session, os.path.join(SOUND_DIR, "amen-mono.wav"),
                       segmentation="beats")
-        iterations = cluster_units(self.session, 3)
-        self.assertNotEqual(iterations, 0)
+        iterations = cluster_units(self.session, 3,
+                                   max_iterations=max_iterations)
+        self.assertNotEqual(iterations, max_iterations)
 
         clusters = self.session.query(Features.cluster).all()
         unique = set([])

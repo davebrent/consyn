@@ -15,7 +15,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from __future__ import unicode_literals
 import logging
-import math
 import os
 import random
 import time
@@ -26,6 +25,7 @@ from . import settings
 from .base import Pipeline
 from .ext import Analyser
 from .ext import FileLoader
+from .models import Cluster
 from .models import Features
 from .models import MediaFile
 from .models import Unit
@@ -144,45 +144,8 @@ def remove_mediafile(session, mediafile):
     session.commit()
 
 
-def _distance_from_center(center, feature):
-    summed = 0
-    for a, b in zip(center.vector(), feature.vector()):
-        summed += (a - b) ** 2.0
-    return math.sqrt(summed)
-
-
-def _update_centers(session, centers):
-    for cluster_index, center in enumerate(centers):
-
-        query = []
-        for slot in range(FEATURE_SLOTS):
-            col_name = "feat_{}".format(slot)
-            query.append(func.avg(getattr(Features, col_name)))
-
-        averages = session.query(*query).filter(
-            Features.cluster == cluster_index).one()
-
-        for index, value in enumerate(averages):
-            col_name = "feat_{}".format(index)
-            setattr(center, col_name, value)
-
-    return centers
-
-
-def _equal_centers(previous, centers):
-    result = True
-    for features1, features2 in zip(previous, centers):
-        for feat1, feat2 in zip(features1, features2):
-            if feat1[2] != feat2[2]:
-                result = False
-                break
-        if result is False:
-            break
-    return result
-
-
 @command
-def cluster_units(session, clusters):
+def cluster_units(session, clusters, max_iterations=10000):
     """Cluster all units. Returns the number of iterations
 
     Kwargs:
@@ -190,33 +153,81 @@ def cluster_units(session, clusters):
       clusters (int): Number of clusters
 
     """
-    num_units = session.query(Unit).count()
-    centers = [session.query(Unit).get(pk + 1).features.copy()
-               for pk in random.sample(xrange(num_units - 2), clusters)]
+    random_pks = random.sample(
+        xrange(session.query(Unit).count() - 2), clusters)
+    random_features = [session.query(Unit).get(pk + 1).features
+                       for pk in random_pks]
 
-    previous = map(lambda center: center.copy(), centers)
+    # initialize centers
+    session.query(Cluster).delete()
+    clusters = []
+    for features in random_features:
+        cluster = Cluster()
+        for index, _, value in features:
+            setattr(cluster, "feat_{}".format(index), value)
+        session.add(cluster)
+        clusters.append(cluster)
+    session.commit()
+
     iterations = 0
-
+    feature_labels = ["feat_{}".format(slot)
+                      for slot in xrange(FEATURE_SLOTS)]
     while True:
+        # Assign each unit to nearest cluster
+        for features in session.query(Features).all():
+            dist_func = func.abs(Cluster.feat_0 - features.feat_0)
+
+            # TODO: Use euclidean distance?
+            for slot in xrange(FEATURE_SLOTS - 1):
+                col_name = feature_labels[slot + 1]
+                dist_func += func.abs(getattr(Cluster, col_name) -
+                                      getattr(features, col_name))
+
+            cluster = session.query(Cluster.id) \
+                .order_by(dist_func).limit(1).one()
+            features.cluster = cluster[0]
+
+        session.flush()
+
+        # Calculate new centroids for each cluster
+        for cluster in clusters:
+            query = []
+            for slot in xrange(FEATURE_SLOTS):
+                col_name = feature_labels[slot]
+                query.append(func.avg(getattr(Features, col_name)))
+
+            averages = session.query(*query).filter(
+                Features.cluster == cluster.id).one()
+
+            for index, value in enumerate(averages):
+                col_name = feature_labels[index]
+                setattr(cluster, col_name, value)
+
+        session.flush()
         iterations += 1
 
-        for unit in session.query(Unit).all():
-            min_distance = float("inf")
+        # Check if centroids have converged
+        equal = True
+        for cluster in clusters:
+            for slot in xrange(FEATURE_SLOTS):
+                col_name = feature_labels[slot]
+                prv_name = "previous_feat_{}".format(slot)
+                current = getattr(cluster, col_name)
+                if current != getattr(cluster, prv_name):
+                    equal = False
+                    break
+            if equal is False:
+                break
 
-            for cluster_index, center in enumerate(centers):
-                distance = _distance_from_center(center, unit.features)
-                if distance >= min_distance:
-                    continue
-                min_distance = distance
-                unit.features.cluster = cluster_index
+        # Update previous values
+        for cluster in clusters:
+            for slot in xrange(FEATURE_SLOTS):
+                col_name = feature_labels[slot]
+                prv_name = "previous_feat_{}".format(slot)
+                setattr(cluster, prv_name, getattr(cluster, col_name))
 
         session.flush()
-        centers = _update_centers(session, centers)
-        session.flush()
-
-        if _equal_centers(previous, centers):
+        if iterations == max_iterations or equal is True:
             break
-        else:
-            previous = map(lambda center: center.copy(), centers)
 
     return iterations

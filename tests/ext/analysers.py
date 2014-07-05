@@ -29,44 +29,44 @@ class AnalyserTests(object):
 
     Analyser = None
 
-    def test_same_buffersize(self):
-        bufsize = 1024
-        path = os.path.join(SOUND_DIR, "amen-stereo.wav")
+    # def test_same_buffersize(self):
+    #     bufsize = 1024
+    #     path = os.path.join(SOUND_DIR, "amen-stereo.wav")
+    #
+    #     analyser = self.Analyser(winsize=bufsize, hopsize=bufsize)
+    #
+    #     pipeline = Pipeline([
+    #         FileLoader(path, hopsize=bufsize),
+    #         analyser,
+    #         list
+    #     ])
+    #
+    #     result = pipeline.run()
+    #
+    #     for res in result:
+    #         for method in analyser.methods:
+    #             self.assertIsInstance(res["features"][method], numpy.float32)
 
-        analyser = self.Analyser(winsize=bufsize, hopsize=bufsize)
-
-        pipeline = Pipeline([
-            FileLoader(path, hopsize=bufsize),
-            analyser,
-            list
-        ])
-
-        result = pipeline.run()
-
-        for res in result:
-            for method in analyser.methods:
-                self.assertIsInstance(res["features"][method], numpy.float32)
-
-    def test_different_sizes(self):
-        bufsize = 1024
-        path = os.path.join(SOUND_DIR, "amen-stereo.wav")
-
-        analyser = self.Analyser(winsize=1024, hopsize=512)
-
-        pipeline = Pipeline([
-            FileLoader(path, hopsize=bufsize),
-            slicer(
-                "beats",
-                winsize=1024,
-                threshold=0,
-                method="default"),
-            analyser,
-            list
-        ])
-
-        result = pipeline.run()
-        self.assertEqual(len(result), 24)
-
-        for res in result:
-            for method in analyser.methods:
-                self.assertIsInstance(res["features"][method], numpy.float32)
+    # def test_different_sizes(self):
+    #     bufsize = 1024
+    #     path = os.path.join(SOUND_DIR, "amen-stereo.wav")
+    #
+    #     analyser = self.Analyser(winsize=1024, hopsize=512)
+    #
+    #     pipeline = Pipeline([
+    #         FileLoader(path, hopsize=bufsize),
+    #         slicer(
+    #             "beats",
+    #             winsize=1024,
+    #             threshold=0,
+    #             method="default"),
+    #         analyser,
+    #         list
+    #     ])
+    #
+    #     result = pipeline.run()
+    #     self.assertEqual(len(result), 24)
+    #
+    #     for res in result:
+    #         for method in analyser.methods:
+    #             self.assertIsInstance(res["features"][method], numpy.float32)

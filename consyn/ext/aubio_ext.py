@@ -14,6 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from __future__ import unicode_literals
+import collections
 import logging
 
 import aubio
@@ -172,7 +173,7 @@ class AubioAnalyser(AnalysisStage):
 
     def analyse(self, frame):
         samples = frame.samples
-        features = {}
+        features = collections.defaultdict(lambda: 0.0)
         frames = slice_array(samples, bufsize=self.winsize,
                              hopsize=self.hopsize)
 
@@ -183,7 +184,7 @@ class AubioAnalyser(AnalysisStage):
             self.mfccs = numpy.vstack((self.mfccs, mfcc_out))
 
             for method in self.methods:
-                features[method] = self.descriptors[method](fftgrain)[0]
+                features[method] += self.descriptors[method](fftgrain)[0]
 
         if len(features) == 0:
             return None

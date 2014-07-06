@@ -52,7 +52,7 @@ class FeaturesTests(unittest.TestCase):
 
     def test_init_features(self):
         order = ["feat_3", "feat_2", "feat_1"]
-        features = Features(False, {
+        features = Features({
             "feat_1": 0.1,
             "feat_2": 0.2,
             "feat_3": 0.3
@@ -72,8 +72,8 @@ class FeaturesTests(unittest.TestCase):
         feats = {}
         for index in range(settings.FEATURE_SLOTS + 1):
             feats["test_{}".format(index)] = index
-        self.assertRaises(AssertionError, Features, False, feats)
+        self.assertRaises(AssertionError, Features, feats)
 
     def test_get_feature_exception(self):
-        features = Features(False, {"feat_1": 0.1})
+        features = Features({"feat_1": 0.1})
         self.assertRaises(Exception, features.__getitem__, "feat_2")

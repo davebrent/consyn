@@ -105,7 +105,10 @@ def add_mediafile(session, path, bufsize=int(config.get("bufsize")),
 
         unit = Unit(mediafile=mediafile, channel=frame.channel,
                     position=frame.position, duration=frame.duration)
-        unit.features = Features(unit, result["features"])
+        features = Features(result["features"])
+        features.unit = unit
+        features.mediafile = mediafile
+        unit.features = features
         session.add(unit)
 
     session.add(mediafile)

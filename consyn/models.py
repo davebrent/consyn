@@ -145,11 +145,7 @@ class Features(Base):
               nullable=True)
               for feature in range(FEATURE_SLOTS))))
 
-    def __init__(self, unit, features):
-        if unit:
-            self.unit = unit
-            self.mediafile = unit.mediafile
-
+    def __init__(self, features):
         if features:
             assert len(features) <= FEATURE_SLOTS
             for index, (label, feature) in enumerate(features.items()):

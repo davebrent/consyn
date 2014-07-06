@@ -37,3 +37,6 @@ def command(config, files):
             continue
 
         remove_mediafile(config.session, mediafile)
+
+    if "sqlite://" in config.database:
+        config.session.execute("VACUUM")

@@ -175,12 +175,12 @@ class SynthesisStage(Stage):
                 context["frame"].samples,
                 context["unit"],
                 context["target"])
-
-            frame = AudioFrame()
-            frame.samples = samples
-            context["unit"] = unit
-            context["frame"] = frame
-            yield context
+            if samples.shape[0] != 0:
+                frame = AudioFrame()
+                frame.samples = samples
+                context["unit"] = unit
+                context["frame"] = frame
+                yield context
 
     def process(self, samples, unit, target):
         raise NotImplementedError("SynthesisStages must implement this")

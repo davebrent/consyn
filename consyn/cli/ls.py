@@ -28,14 +28,8 @@ def command(config):
     if col1 < 2:
         col1 = 2
 
-    items = ""
-
-    for mediafile in config.session.query(MediaFile).all():
-        name = mediafile.path
-
-        if len(name) > (80 - col1 - 2):
-            name = name[0:(77 - col1 - 2)] + "..."
-        row = "{0:{col1}} {1}".format(mediafile.id, name, col1=col1)
-        items += row + "\n"
-
-    click.echo_via_pager(items)
+    for _id, path in config.session.query(MediaFile.id, MediaFile.path).all():
+        if len(path) > (80 - col1 - 2):
+            path = path[0:(77 - col1 - 2)] + "..."
+        row = "{0:{col1}} {1}".format(_id, path, col1=col1)
+        click.echo(row)

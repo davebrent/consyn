@@ -21,11 +21,22 @@ from .base import SynthesisStage
 
 
 __all__ = [
+    "Gain",
     "Envelope",
     "TimeStretch",
     "TrimSilence",
     "SoftClipper"
 ]
+
+
+class Gain(SynthesisStage):
+
+    def __init__(self, gain=1.0):
+        super(Gain, self).__init__()
+        self.gain = float(gain)
+
+    def process(self, samples, unit, target):
+        return samples * self.gain, unit
 
 
 class Envelope(SynthesisStage):

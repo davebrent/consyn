@@ -28,7 +28,10 @@ def command(config):
     if col1 < 2:
         col1 = 2
 
-    for _id, path in config.session.query(MediaFile.id, MediaFile.path).all():
+    mediafiles = config.session.query(
+        MediaFile.id, MediaFile.path).order_by(MediaFile.id).all()
+
+    for _id, path in mediafiles:
         if len(path) > (80 - col1 - 2):
             path = path[0:(77 - col1 - 2)] + "..."
         row = "{0:{col1}} {1}".format(_id, path, col1=col1)

@@ -23,16 +23,29 @@ from .base import SynthesisStage
 __all__ = [
     "Envelope",
     "TimeStretch",
-    "TrimSilence"
+    "TrimSilence",
+    "SoftClipper"
 ]
 
 
 class Envelope(SynthesisStage):
 
+    def __init__(self, fade=30):
+        super(Envelope, self).__init__()
+        self.fade = fade
+        self.attack = numpy.linspace(0.0, 1.0, num=fade)
+        self.decay = numpy.linspace(1.0, 0.0, num=fade)
+
     def process(self, samples, unit, target):
-        duration = samples.shape[0]
-        envelope = numpy.linspace(1.0, 0.0, num=duration)
-        samples *= envelope
+        samples[0:self.fade] *= self.attack
+        samples[-self.fade:] *= self.decay
+        return samples, unit
+
+
+class SoftClipper(SynthesisStage):
+
+    def process(self, samples, unit, target):
+        samples = numpy.tanh(samples)
         return samples, unit
 
 

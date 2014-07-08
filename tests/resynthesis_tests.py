@@ -27,10 +27,11 @@ from consyn.resynthesis import TrimSilence
 class EnvelopeTests(unittest.TestCase):
 
     def test_simple(self):
-        envelope = Envelope()
-        samples = numpy.array([1, 1, 1, 1, 1], dtype="float32")
+        envelope = Envelope(fade=3)
+        samples = numpy.array([1, 1, 1, 1, 1, 1, 1, 1, 1], dtype="float32")
         samples, _ = envelope.process(samples, None, None)
-        self.assertEqual(list(samples), [1.0, 0.75, 0.5, 0.25, 0.0])
+        self.assertEqual(list(samples), [
+            0.0, 0.5, 1.0, 1.0, 1.0, 1.0, 1.0, 0.5, 0.0])
 
 
 class TimestretchTests(unittest.TestCase):

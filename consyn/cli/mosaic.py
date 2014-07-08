@@ -27,6 +27,7 @@ from ..ext import UnitLoader
 from ..ext import Writer
 from ..models import MediaFile
 from ..resynthesis import Envelope
+from ..resynthesis import SoftClipper
 from ..resynthesis import TimeStretch
 from ..resynthesis import TrimSilence
 from ..selections import selection
@@ -50,11 +51,14 @@ class ProgressBar(object):
 @click.option("--select", default="nearest",
               help="Unit selection algorithm")
 @click.option("--concatenate", default="overlay", help="Concatenation method")
+@click.option("--fade", default=500, help="Unit fade in/out time")
+@click.option("--gate", default=0.00001, help="Gate level")
 @click.argument("output")
 @click.argument("target")
 @click.argument("mediafiles", nargs=-1, required=False)
 @configurator
-def command(config, output, target, mediafiles, force, select, concatenate):
+def command(config, output, target, mediafiles, force, select, concatenate,
+            fade, gate):
     if os.path.isfile(output) and not force:
         click.secho("File already exists", fg="red")
         return
@@ -74,9 +78,10 @@ def command(config, output, target, mediafiles, force, select, concatenate):
         UnitLoader(
             hopsize=2048,
             key=lambda state: state["unit"].mediafile.path),
-        TrimSilence(cutoff=0.0001),
+        TrimSilence(cutoff=gate),
         TimeStretch(),
-        Envelope(),
+        Envelope(fade=fade),
+        SoftClipper(),
         ProgressBar(target.units.count()),
         concatenator(concatenate, target, unit_key="target"),
         Writer(target, output),
